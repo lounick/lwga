@@ -16,8 +16,8 @@ std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat) {
   while (start_again) {
     start_again = false;
 
-    for (size_t i = 1; i < tmp_path.size() - 2; i++) {
-      for (size_t k = i + 1; k < tmp_path.size() - 1; k++) {
+    for (size_t i = 1; i < tmp_path.size() - 2; ++i) {
+      for (size_t k = i + 1; k < tmp_path.size() - 1; ++k) {
         Path new_path = two_opt_swap(tmp_path, i, k);
 
         //This works only for symmetric costs. for non-symmetric you must change that and calculate the whole reverse path cost.
@@ -44,7 +44,7 @@ std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat) {
 
 double get_path_cost(Path &path, Matrix<double> &cost_mat) {
   double cost = 0;
-  for (Path::iterator it = path.begin() + 1; it != path.end(); it++) {
+  for (Path::iterator it = path.begin() + 1; it != path.end(); ++it) {
     cost += cost_mat[*(it - 1)][*it];
     if (it != (path.end() - 1)) {
       cost += 1;
@@ -60,7 +60,7 @@ double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<
   static std::vector<uint_fast32_t> vertices;
   if(vertices.size() == 0) {
     vertices.reserve(cost_mat.size());
-    for (uint_fast32_t i = 0; i < cost_mat.size(); i++)
+    for (uint_fast32_t i = 0; i < cost_mat.size(); ++i)
       vertices.push_back(i);
   }
   std::vector<uint_fast32_t> free_vertices;
@@ -77,12 +77,12 @@ double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<
   size_t pathsize = c.path.size() - 1;
   size_t fsize = free_vertices.size();
 
-  for (size_t i = 1; i < pathsize; i++) {
+  for (size_t i = 1; i < pathsize; ++i) {
     double extras = 0;
     uint_fast32_t vertex = c.path[i];
     insert_ret = seen.insert(vertex);
     if (insert_ret.second) {
-      for (size_t j = 0; j < fsize; j++) {
+      for (size_t j = 0; j < fsize; ++j) {
         double dist = cost_mat[vertex][free_vertices[j]];
         if (dist < 2) {
           extras += std::exp(-2 * dist);
@@ -121,10 +121,7 @@ double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<
   return pow(fitness, 3) / c.cost;
 }
 
-Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost) {
-
-  static thread_local std::random_device rd;
-  static thread_local std::mt19937 g(rd());
+Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost, std::mt19937 &g) {
 
   Chromosome mutated;
   mutated.path.reserve(cost_mat.size());
@@ -137,7 +134,7 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
   std::unordered_set<uint_fast32_t> seen;
   std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_return;
   Path new_path;
-  for (size_t i = 0; i < mutated.path.size(); i++) {
+  for (size_t i = 0; i < mutated.path.size(); ++i) {
     insert_return = seen.insert(mutated.path[i]);
     if (insert_return.second) {
       new_path.push_back(mutated.path[i]);
@@ -158,7 +155,7 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
                       visited_vertices.end(),
                       std::back_inserter(free_vertices));
 
-  for (uint_fast32_t iter = 0; iter < 10; iter++) {
+  for (uint_fast32_t iter = 0; iter < 10; ++iter) {
     if (std::generate_canonical<double, 10>(g) < 0.9) {
       if (mutated.cost >= 0.99 * max_cost) { //TODO: This is bound to have different effect in different grid sizes and budgets.
                                              //TODO: Should come up with something including the average travel cost or something smarter.
@@ -222,11 +219,10 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
         size_t vertex_idx = dis(g);
         uint_fast32_t vertex = free_vertices[vertex_idx];
 
-        double best_fitness = 0;
         double best_travel_increase = 0;
         size_t ins_pos = 0;
 
-        for (size_t i = 1; i < mutated.path.size(); i++) {
+        for (size_t i = 1; i < mutated.path.size(); ++i) {
           double travel_increase = cost_mat[mutated.path[i - 1]][vertex] + cost_mat[vertex][mutated.path[i]]
               - cost_mat[mutated.path[i - 1]][mutated.path[i]];
           double fitness = rewards[vertex]; //TODO: Should we add the extras to the fitness?
@@ -237,7 +233,6 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
             fitness = std::numeric_limits<double>::infinity();
           }
           if (mutated.cost + travel_increase + 1 <= max_cost) {
-            best_fitness = fitness;
             best_travel_increase = travel_increase;
             ins_pos = i;
           }
@@ -272,7 +267,7 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
         std::vector<uint_fast32_t>::iterator it = mutated.path.begin();
         while ((it = std::find(it, mutated.path.end(), duplicate)) != mutated.path.end()) {
           indices.push_back(std::distance(mutated.path.begin(), it));
-          it++;
+          ++it;
         }
 
         // Remove the one with the minimum loss
@@ -287,7 +282,7 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
           double loss = rewards[mutated.path[idx]];
 
           double extras = 0;
-          for (size_t j = 0; j < free_vertices.size(); j++) {
+          for (size_t j = 0; j < free_vertices.size(); ++j) {
             if (cost_mat[mutated.path[idx]][free_vertices[j]] < 2) {
               extras += std::exp(-2 * cost_mat[mutated.path[idx]][free_vertices[j]]);
             }
@@ -317,13 +312,13 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
         if (mutated.cost >= 0.9 * max_cost) {
           size_t to_remove = 0;
           double min_loss = std::numeric_limits<double>::infinity();
-          for (size_t i = 1; i < mutated.path.size() - 1; i++) {
+          for (size_t i = 1; i < mutated.path.size() - 1; ++i) {
             double travel_decrease =
                 cost_mat[mutated.path[i - 1]][mutated.path[i]] + cost_mat[mutated.path[i]][mutated.path[i + 1]]
                     - cost_mat[mutated.path[i - 1]][mutated.path[i + 1]];
             double loss = rewards[mutated.path[i]];
             double extras = 0;
-            for (size_t j = 0; j < free_vertices.size(); j++) {
+            for (size_t j = 0; j < free_vertices.size(); ++j) {
               if (cost_mat[mutated.path[i]][free_vertices[j]] < 2) {
                 extras += std::exp(-2 * cost_mat[mutated.path[i]][free_vertices[j]]);
               }
@@ -355,9 +350,7 @@ Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &
   return mutated;
 }
 
-std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<double> &cost_mat, double max_cost) {
-  static std::random_device rd;
-  static std::mt19937 g(rd());
+std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<double> &cost_mat, double max_cost, std::mt19937 &g) {
 
   Chromosome off1, off2;
   off1.path.reserve(cost_mat.size());
@@ -395,7 +388,7 @@ std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<doub
     std::unordered_set<uint_fast32_t> seen;
     std::vector<uint_fast32_t> new_path;
     std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_result;
-    for (size_t i = 0; i < off1.path.size(); i++) {
+    for (size_t i = 0; i < off1.path.size(); ++i) {
       insert_result = seen.insert(off1.path[i]);
       if (insert_result.second) {
         new_path.push_back(off1.path[i]);
@@ -407,7 +400,7 @@ std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<doub
 
     seen.clear();
     new_path.clear();
-    for (size_t i = 0; i < off2.path.size(); i++) {
+    for (size_t i = 0; i < off2.path.size(); ++i) {
       insert_result = seen.insert(off2.path[i]);
       if (insert_result.second) {
         new_path.push_back(off2.path[i]);
@@ -465,9 +458,7 @@ std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<doub
   }
 }
 
-Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t tour_size) {
-  static std::random_device rd;
-  static std::mt19937 g(rd());
+Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t tour_size, std::mt19937 &g) {
 
   std::vector<uint_fast32_t> indices(population.size());
   std::iota(indices.begin(), indices.end(), 0);
@@ -475,7 +466,7 @@ Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t 
   double max_fitness = DBL_MIN;
   Chromosome best_chromosome;
 
-  for (size_t i = 0; i < tour_size; i++) {
+  for (size_t i = 0; i < tour_size; ++i) {
     if (population[indices[i]].fitness > max_fitness) {
       max_fitness = population[indices[i]].fitness;
       best_chromosome = population[indices[i]];
@@ -485,9 +476,7 @@ Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t 
   return best_chromosome;
 }
 
-Chromosome generate_chromosome(Matrix<double> &cost_mat, double max_cost, uint_fast32_t idx_start, uint_fast32_t idx_finish) {
-  static std::random_device rd;
-  static std::mt19937 g(rd());
+Chromosome generate_chromosome(Matrix<double> &cost_mat, double max_cost, uint_fast32_t idx_start, uint_fast32_t idx_finish, std::mt19937 &g) {
 
   Chromosome c;
   c.path.reserve(cost_mat.size());
@@ -528,11 +517,12 @@ std::pair<bool, double> check_feasibility(Chromosome &c, Matrix<double> &cost_ma
   return std::make_pair(is_feasible, path_cost);
 }
 
-Chromosome ga_cop(Matrix<double> &cost_mat,
+Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
                   std::vector<double> &rewards,
                   double max_cost,
                   uint_fast32_t idx_start,
-                  uint_fast32_t idx_finish) {
+                  uint_fast32_t idx_finish,
+                  std::mt19937 &g) {
 
   /*
    * Initialise population
@@ -542,8 +532,6 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
    *  Mutate
    * Select fittest
   */
-  std::random_device rd;
-  std::mt19937 g(rd());
 
   uint_fast32_t pop_size = 100;
   int tour_size = 5;
@@ -553,8 +541,8 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
   std::vector<Chromosome> pop;
   pop.reserve(pop_size);
 
-  for (uint_fast32_t i = 0; i < pop_size; i++) {
-    Chromosome c = generate_chromosome(cost_mat, max_cost, idx_start, idx_finish);
+  for (uint_fast32_t i = 0; i < pop_size; ++i) {
+    Chromosome c = generate_chromosome(cost_mat, max_cost, idx_start, idx_finish, g);
     std::pair<std::vector<uint_fast32_t>, double> two_opt_ret = two_opt(c.path, cost_mat);
     c.path = two_opt_ret.first;
     c.cost = two_opt_ret.second;
@@ -562,40 +550,46 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
     pop.push_back(c);
   }
 
-  for (int gen = 0; gen < max_gen; gen++) {
+  for (int gen = 0; gen < max_gen; ++gen) {
     // Select new population
 //    std::cout << "Calculating generation " << gen << std::endl;
     std::vector<Chromosome> new_pop;
     new_pop.reserve(pop_size);
 
-    for (uint_fast32_t i = 0; i < pop_size; i++) {
-      new_pop.push_back(tournament_select(pop, tour_size));
+    for (uint_fast32_t i = 0; i < pop_size; ++i) {
+      new_pop.push_back(tournament_select(pop, tour_size, g));
     }
 
     // Cx
-    for (int i = 0; i < 20; i++) {
-      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2);
-      std::pair<Chromosome, Chromosome> cx_ret = cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost);
+    for (int i = 0; i < 20; ++i) {
+      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2, g);
+      std::pair<Chromosome, Chromosome> cx_ret = cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost, g);
       new_pop[indices[0]] = cx_ret.first;
       new_pop[indices[1]] = cx_ret.second;
       new_pop[indices[0]].fitness = evaluate_chromosome(new_pop[indices[0]], cost_mat, rewards);
       new_pop[indices[1]].fitness = evaluate_chromosome(new_pop[indices[1]], cost_mat, rewards);
     }
 
-    // Mutate TODO: Make it run into parallel chunks and not spawn multiple threads. Each thread should take a list of indices and a refference to the whole population and do the work
-    std::vector<size_t> indices = get_population_sample(new_pop.size(), 25);
+    // Mutate
+    std::vector<size_t> indices = get_population_sample(new_pop.size(), 25, g);
+    uint_fast32_t M = 8; //number of cores
+    uint_fast32_t chunk_size = indices.size()/M;
+
     /*for (size_t idx : indices) {
       new_pop[idx] = mutate(new_pop[idx], cost_mat, rewards, max_cost);
     }*/
-    std::vector< std::future< std::pair<size_t, Chromosome> > > future_v;
-    future_v.reserve(indices.size());
-    for (size_t idx : indices) {
-      future_v.push_back(std::async(std::launch::async, par_mutate, idx, new_pop[idx], cost_mat, rewards, max_cost));
+    std::vector< std::future<void> > future_v;
+    for (uint_fast32_t thread_count = 0; thread_count < M; ++thread_count) {
+      //std::launch::deferred|std::launch::async;
+      std::vector<size_t > tmpv(indices.begin()+thread_count*chunk_size,indices.begin()+(thread_count+1)*chunk_size);
+      future_v.push_back(std::async(std::launch::async, par_mutate, tmpv, std::ref(new_pop), std::ref(cost_mat), std::ref(rewards), std::ref(max_cost)));
     }
-
+    if(indices.size()%M != 0){
+      std::vector<size_t> tmpv(indices.begin()+(M)*chunk_size,indices.end());
+      future_v.push_back(std::async(std::launch::async, par_mutate, tmpv, std::ref(new_pop), std::ref(cost_mat), std::ref(rewards), std::ref(max_cost)));
+    }
     for(auto &f: future_v){
-      auto ret = f.get();
-      new_pop[ret.first] = ret.second;
+      f.get();
     }
 
 
@@ -613,7 +607,7 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
                       visited_vertices.begin(),
                       visited_vertices.end(),
                       std::back_inserter(free_vertices));
-  for (size_t vertex_idx = 1; vertex_idx < best.path.size() - 2; vertex_idx++) {
+  for (size_t vertex_idx = 1; vertex_idx < best.path.size() - 2; ++vertex_idx) {
     std::vector<uint_fast32_t> available_vertices;
     for (uint_fast32_t fv:free_vertices) {
       if (cost_mat[best.path[vertex_idx]][fv] < 2) {
@@ -657,33 +651,16 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
   return best;
 }
 
-std::vector<size_t> get_population_sample(size_t pop_size, int samples) {
-  static std::random_device rd;
-  static std::mt19937 g(rd());
-
-  std::vector<size_t> indices(pop_size);
-  std::iota(indices.begin(), indices.end(), 0);
-  size_t max = indices.size() - 1;
-
-  std::vector<size_t> result;
-
-  for (int i = 0; i < samples; i++) {
-    std::uniform_int_distribution<> d(0, max);
-    size_t index = d(g);
-    std::swap(indices[index], indices[max]);
-    result.push_back(indices[max]);
-    max--;
-  }
-  return result;
-}
-
-std::pair<size_t, Chromosome>
-par_mutate(size_t idx, Chromosome c, Matrix<double> cost_mat, std::vector<double> rewards, double max_cost) {
+void par_mutate(std::vector<size_t> indices,
+                std::vector<Chromosome> &pop,
+                Matrix<double> &cost_mat,
+                std::vector<double> &rewards,
+                double &max_cost){
 
   // Get hash of thread id for the seed of the generator. 
-  // std::hash<std::thread::id> hasher;
-  // hasher(std::this_thread::get_id());
+  std::hash<std::thread::id> hasher;
+  static thread_local std::mt19937 g(hasher(std::this_thread::get_id()));
 
-  Chromosome ret = mutate(c, cost_mat, rewards, max_cost);
-  return std::make_pair(idx, ret);
+  for(size_t idx:indices)
+    pop[idx] = mutate(pop[idx], cost_mat, rewards, max_cost, g);
 }

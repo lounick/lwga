@@ -36,11 +36,14 @@ int main() {
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 10;
+  int nexp = 100;
+
+  std::random_device rd;
+  std::mt19937 g(rd());
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
-    Chromosome c = ga_cop(cost_mat, rewards, 81.5, 0, 82);
+    Chromosome c = ga_cop(cost_mat, rewards, 81.5, 0, 82, g);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());

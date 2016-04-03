@@ -18,6 +18,7 @@
 #include <thread>
 #include <future>
 #include "ga_types.h"
+#include "ga_utils.h"
 
 class Chromosome {
  public:
@@ -26,19 +27,31 @@ class Chromosome {
   double cost;
 };
 
-Chromosome generate_chromosome(Matrix<double> &cost_mat, double max_cost, uint_fast32_t idx_start, uint_fast32_t idx_finish);
+Chromosome generate_chromosome (Matrix<double> &cost_mat,
+                                double max_cost,
+                                uint_fast32_t idx_start,
+                                uint_fast32_t idx_finish,
+                                std::mt19937 &g);
 
-Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t tour_size = 3);
+Chromosome tournament_select(std::vector<Chromosome> &population, uint_fast32_t tour_size, std::mt19937 &g);
 
-std::pair<Chromosome, Chromosome> cx(Chromosome &c1, Chromosome &c2, Matrix<double> &cost_mat, double max_cost);
+std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
+                                     Chromosome &c2,
+                                     Matrix<double> &cost_mat,
+                                     double max_cost,
+                                     std::mt19937 &g);
 
-Chromosome mutate(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost);
+Chromosome mutate(Chromosome &c,
+                  Matrix<double> &cost_mat,
+                  std::vector<double> &rewards,
+                  double max_cost,
+                  std::mt19937 &g);
 
-std::pair<size_t, Chromosome> par_mutate(size_t idx,
-                                         Chromosome c,
-                                         Matrix<double> cost_mat,
-                                         std::vector<double> rewards,
-                                         double max_cost);
+void par_mutate(std::vector<size_t> indices,
+                std::vector<Chromosome> &pop,
+                Matrix<double> &cost_mat,
+                std::vector<double> &rewards,
+                double &max_cost);
 
 double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards);
 
@@ -54,8 +67,7 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
                   std::vector<double> &rewards,
                   double max_cost,
                   uint_fast32_t idx_start,
-                  uint_fast32_t idx_finish);
-
-std::vector<size_t> get_population_sample(size_t pop_size, int samples);
+                  uint_fast32_t idx_finish,
+                  std::mt19937 &g);
 
 #endif //GUROBI_TESTS_COP_GA_H
