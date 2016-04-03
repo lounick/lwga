@@ -84,7 +84,11 @@ std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
    */
   std::sort(c1.genes.begin(), c1.genes.end(), [](Gene &g1, Gene &g2){ return g1.fitness > g2.fitness; });
   std::sort(c2.genes.begin(), c2.genes.end(), [](Gene &g1, Gene &g2){ return g1.fitness > g2.fitness; });
-  Gene g1_best = c1.fitness
+  //Gene g1_best = c1.genes.front();
+  c1.genes.back() = c2.genes.front();
+  c2.genes.back() = c1.genes.front();
+  std::sort(c1.genes.begin(), c1.genes.end(), [](Gene &g1, Gene &g2){ return g1.fitness > g2.fitness; });
+  std::sort(c2.genes.begin(), c2.genes.end(), [](Gene &g1, Gene &g2){ return g1.fitness > g2.fitness; });
 }
 
 Chromosome mutate(Chromosome &c,
@@ -129,9 +133,5 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
                   std::vector<double> max_cost_v,
                   uint idx_start,
                   uint idx_finish){
-
-}
-
-std::vector<size_t> get_population_sample(size_t pop_size, int samples){
 
 }

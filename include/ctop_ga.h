@@ -17,7 +17,8 @@
 #include <chrono>
 #include <thread>
 #include <future>
-#include <include/ga_types.h>
+#include "ga_types.h"
+#include "ga_utils.h"
 
 
 class Gene {
@@ -73,7 +74,5 @@ Chromosome ga_cop(Matrix<double> &cost_mat,
                   std::vector<double> max_cost_v,
                   uint idx_start,
                   uint idx_finish);
-
-std::vector<size_t> get_population_sample(size_t pop_size, int samples);
 
 #endif //LWGA_CTOP_GA_H
