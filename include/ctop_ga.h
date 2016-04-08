@@ -26,53 +26,42 @@ class Gene {
   Path path;
   double fitness;
   double cost;
+  void evaluate_gene(Matrix<double> &cost_mat, std::vector<double> &rewards, std::vector<uint_fast32_t> &free_vertices);
+  void calculate_cost(Matrix<double> &cost_mat);
+  void mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost, std::mt19937 &g);
 };
 
 class Chromosome {
  public:
   std::vector<Gene> genes;
   double total_fitness;
+  void evaluate_chromosome();
+  void mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, std::vector<double> &max_cost_v, std::mt19937 &g);
 };
 
 
 
-Chromosome generate_chromosome(Matrix<double> &cost_mat,
-                               std::vector<double> &max_cost_v,
-                               uint idx_start,
-                               uint idx_finish);
+Chromosome generate_chromosome (Matrix<double> &cost_mat,
+                                std::vector<double> &max_cost_v,
+                                uint idx_start,
+                                uint idx_finish,
+                                std::mt19937 &g);
 
-Chromosome tournament_select(std::vector<Chromosome> &population, uint tour_size = 3);
+Chromosome tournament_select(std::vector<Chromosome> &population, uint tour_size, std::mt19937 &g);
 
-std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
-                                     Chromosome &c2,
-                                     Matrix<double> &cost_mat,
-                                     std::vector<double> &max_cost_v);
+void cx(Chromosome &c1, Chromosome &c2, Matrix<double> &cost_mat, std::vector<double> &max_cost_v, std::vector<double> &rewards);
 
-Chromosome mutate(Chromosome &c,
-                  Matrix<double> &cost_mat,
-                  std::vector<double> &rewards,
-                  std::vector<double> &max_cost_v);
+void par_mutate(std::vector<size_t> indices,
+                std::vector<Chromosome> &pop,
+                Matrix<double> &cost_mat,
+                std::vector<double> &rewards,
+                std::vector<double> &max_cost_v);
 
-std::pair<size_t, Chromosome> par_mutate(size_t idx,
-                                         Chromosome c,
-                                         Matrix<double> cost_mat,
-                                         std::vector<double> rewards,
-                                         std::vector<double> &max_cost_v);
-
-double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards);
-
-double get_path_cost(Path &path, Matrix<double> &cost_mat);
-
-Path two_opt_swap(Path &path, size_t &i, size_t &k);
-
-std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat);
-
-std::pair<bool, double> check_feasibility(Chromosome &c, Matrix<double> &cost_mat, std::vector<double>& max_cost_v);
-
-Chromosome ga_cop(Matrix<double> &cost_mat,
+Chromosome ga_ctop(Matrix<double> &cost_mat,
                   std::vector<double> &rewards,
                   std::vector<double> max_cost_v,
                   uint idx_start,
-                  uint idx_finish);
+                  uint idx_finish,
+                  std::mt19937 &g);
 
 #endif //LWGA_CTOP_GA_H
