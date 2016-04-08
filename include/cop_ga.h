@@ -25,6 +25,9 @@ class Chromosome {
   Path path;
   double fitness;
   double cost;
+  void calculate_cost(Matrix<double> &cost_mat);
+  void evaluate_chromosome(Matrix<double> &cost_mat, std::vector<double> &rewards);
+  void mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost, std::mt19937 &g);
 };
 
 Chromosome generate_chromosome (Matrix<double> &cost_mat,
@@ -41,27 +44,11 @@ std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
                                      double max_cost,
                                      std::mt19937 &g);
 
-Chromosome mutate(Chromosome &c,
-                  Matrix<double> &cost_mat,
-                  std::vector<double> &rewards,
-                  double max_cost,
-                  std::mt19937 &g);
-
 void par_mutate(std::vector<size_t> indices,
                 std::vector<Chromosome> &pop,
                 Matrix<double> &cost_mat,
                 std::vector<double> &rewards,
                 double &max_cost);
-
-double evaluate_chromosome(Chromosome &c, Matrix<double> &cost_mat, std::vector<double> &rewards);
-
-double get_path_cost(Path &path, Matrix<double> &cost_mat);
-
-Path two_opt_swap(Path &path, size_t &i, size_t &k);
-
-std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat);
-
-std::pair<bool, double> check_feasibility(Chromosome &c, Matrix<double> &cost_mat, double max_cost);
 
 Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
                   std::vector<double> &rewards,

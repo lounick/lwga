@@ -36,7 +36,7 @@ int main() {
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 100;
+  int nexp = 10;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -47,10 +47,10 @@ int main() {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
-    for (uint_fast32_t vertex:c.path) {
-      std::cout << vertex << " ";
-    }
-    std::cout << std::endl;
+//    for (uint_fast32_t vertex:c.path) {
+//      std::cout << vertex << " ";
+//    }
+//    std::cout << std::endl;
 
     double fitness = 0;
     std::vector<uint_fast32_t> vertices(cost_mat.size());
@@ -78,8 +78,8 @@ int main() {
       }
     }
     fitnesses.push_back(fitness);
-    std::cout << fitness << std::endl;
-    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
+//    std::cout << fitness << std::endl;
+//    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
   }
   std::cout << "Average fitness: " << std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size()
       << std::endl;
