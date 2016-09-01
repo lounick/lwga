@@ -115,7 +115,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, 
   for(uint_fast32_t robot = 0; robot < num_robots; ++robot){
     for (uint_fast32_t iter = 0; iter < 10; ++iter) {
       if (std::generate_canonical<double, 10>(g) < 0.9) {
-        if (mutated.genes[robot].cost >= 0.99 * max_cost_v[robot]) {
+        if (mutated.genes[robot].cost >= 0.9 * max_cost_v[robot]) {
           //TODO: This is bound to have different effect in different grid sizes and budgets.
           //TODO: Should come up with something including the average travel cost or something smarter.
           /*
