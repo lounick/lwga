@@ -36,7 +36,7 @@ int main() {
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 10;
+  int nexp = 3000;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -81,9 +81,24 @@ int main() {
 //    std::cout << fitness << std::endl;
 //    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
   }
-  std::cout << "Average fitness: " << std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size()
-      << std::endl;
-  std::cout << "Average time: " << std::accumulate(times.begin(), times.end(), 0.0) / times.size() << std::endl;
+  double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
+  std::cout << "Average fitness: " << avg_fit << std::endl;
+  double fit_var;
+  for (int i = 0; i < fitnesses.size(); ++i){
+    fit_var += pow((fitnesses[i]-avg_fit),2);
+  }
+  fit_var /= fitnesses.size();
+  double fit_stddev = sqrt(fit_var);
+  std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+
+  double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+  double time_var;
+  for (int i = 0; i < times.size(); ++i){
+    time_var += pow((times[i]-avg_time),2);
+  }
+  time_var /= times.size();
+  double time_stddev = sqrt(time_var);
+  std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
 //  std::vector<uint_fast32_t> path(11);
 //  std::iota(path.begin(), path.end(), 0);
 //
