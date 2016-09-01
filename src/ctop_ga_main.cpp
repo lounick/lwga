@@ -32,15 +32,18 @@ int main(){
   std::vector<double> rewards(cost_mat.size(), 1);
   rewards[0] = 0;
   rewards[82] = 0;
-  uint_fast32_t num_robots = 4;
+  uint_fast32_t num_robots = 2;
   std::vector<double> max_cost_v(num_robots, 27);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 20;
+  int nexp = 100;
 
   std::random_device rd;
   std::mt19937 g(rd());
+
+  Chromosome best;
+  double best_fit = 0;
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
@@ -87,9 +90,26 @@ int main(){
     c.evaluate_chromosome();
     std::cout << c.total_fitness << " " << fitness << std::endl;
     fitnesses.push_back(fitness);
+    if(fitness > best_fit){
+          best = c;
+          best_fit = fitness;
+      };
   }
   std::cout << "Average fitness: " << std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size()
       << std::endl;
   std::cout << "Average time: " << std::accumulate(times.begin(), times.end(), 0.0) / times.size() << std::endl;
+
+  std::cout << best_fit << std::endl;
+  std::cout << "[";
+  for(size_t i = 0; i < num_robots; i++){
+    std::cout << "[";
+    for(size_t j = 0; j < best.genes[i].path.size(); j++){
+      if(j < best.genes[i].path.size() - 1)
+        std::cout << best.genes[i].path[j] << ", ";
+      else
+        std::cout << best.genes[i].path[j] << "]";
+    }
+  }
+  std::cout << "]" << std::endl;
   return 0;
 }
