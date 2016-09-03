@@ -26,6 +26,12 @@ set(CTOP_GA
         src/ctop_ga.cpp
         src/ctop_ga_main.cpp)
 
+set(ICRA17_COP
+        ${GENERIC_FILES}
+        include/cop_ga.h
+        src/cop_ga.cpp
+        runs/icra17_cop.cpp)
+
 include_directories(.)
 include_directories(include)
 
@@ -35,3 +41,6 @@ target_link_libraries(cop-ga pthread)
 
 add_executable(ctop-ga ${CTOP_GA})
 target_link_libraries(ctop-ga pthread)
+
+add_executable(icra17-cop ${ICRA17_COP})
+target_link_libraries(icra17-cop pthread)
