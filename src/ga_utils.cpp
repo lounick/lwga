@@ -99,7 +99,7 @@ double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std
     if (insert_ret.second) {
       for (size_t j = 0; j < free_vertices.size(); j++) {
         if (cost_mat[p[i]][free_vertices[j]] < 2) {
-          extras += std::exp(-2 * cost_mat[p[i]][free_vertices[j]]);
+          extras += std::exp(-2 * cost_mat[p[i]][free_vertices[j]])*rewards[free_vertices[j]];
         }
       }
       fitness += rewards[p[i]] + extras;

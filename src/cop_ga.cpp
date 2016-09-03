@@ -34,7 +34,7 @@ void Chromosome::evaluate_chromosome(Matrix<double> &cost_mat, std::vector<doubl
       for (size_t j = 0; j < fsize; ++j) {
         double dist = cost_mat[vertex][free_vertices[j]];
         if (dist < 2) {
-          extras += std::exp(-2 * dist); //TODO: This assumes a fixed sensor range. Change it to what Valerio did in the quadratic COP problem solved by Gurobi.
+          extras += std::exp(-2 * dist)*rewards[free_vertices[j]]; //TODO: This assumes a fixed sensor range. Change it to what Valerio did in the quadratic COP problem solved by Gurobi.
         }
       }
       fitness += rewards[vertex] + extras;
@@ -211,7 +211,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, 
           double extras = 0;
           for (size_t j = 0; j < free_vertices.size(); ++j) {
             if (cost_mat[mutated.path[idx]][free_vertices[j]] < 2) {
-              extras += std::exp(-2 * cost_mat[mutated.path[idx]][free_vertices[j]]);
+              extras += std::exp(-2 * cost_mat[mutated.path[idx]][free_vertices[j]])*rewards[free_vertices[j]];
             }
           }
           loss += extras;
@@ -247,7 +247,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, 
             double extras = 0;
             for (size_t j = 0; j < free_vertices.size(); ++j) {
               if (cost_mat[mutated.path[i]][free_vertices[j]] < 2) {
-                extras += std::exp(-2 * cost_mat[mutated.path[i]][free_vertices[j]]);
+                extras += std::exp(-2 * cost_mat[mutated.path[i]][free_vertices[j]])*rewards[free_vertices[j]];
               }
             }
             loss += extras;
@@ -478,7 +478,7 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
 
   uint_fast32_t pop_size = 200;
   int tour_size = 3;
-  int max_gen = 50;
+  int max_gen = 75;
 
   // Initialise population
   std::vector<Chromosome> pop;
