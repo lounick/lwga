@@ -1,0 +1,65 @@
+===5x5===
+===51===
+Average fitness: 25 Variance: 0 StdDev: 0
+Average time: 0.221267 Variance: 0.000901599 StdDev: 0.0300266
+===38.25===
+Average fitness: 20.7035 Variance: 0.00769862 StdDev: 0.0877418
+Average time: 0.164516 Variance: 0.000180741 StdDev: 0.013444
+===25.5===
+Average fitness: 14.4862 Variance: 0.082285 StdDev: 0.286854
+Average time: 0.126937 Variance: 0.000180713 StdDev: 0.0134429
+===12.75===
+Average fitness: 7.0695 Variance: 0.00808972 StdDev: 0.0899429
+Average time: 0.102968 Variance: 0.000208777 StdDev: 0.0144491
+===6x6===
+===73.236===
+Average fitness: 35.5541 Variance: 1.38976e-26 StdDev: 1.17888e-13
+Average time: 0.350017 Variance: 0.00363981 StdDev: 0.0603309
+===54.927===
+Average fitness: 29.7584 Variance: 0.0206639 StdDev: 0.14375
+Average time: 0.243186 Variance: 0.000824009 StdDev: 0.0287056
+===36.618===
+Average fitness: 21.2097 Variance: 0.0791169 StdDev: 0.281277
+Average time: 0.15896 Variance: 0.000276 StdDev: 0.0166132
+===18.309===
+Average fitness: 10.5257 Variance: 0.10447 StdDev: 0.323218
+Average time: 0.0900803 Variance: 3.28796e-05 StdDev: 0.00573407
+===7x7===
+===99.828===
+Average fitness: 48.5541 Variance: 5.48453e-25 StdDev: 7.40576e-13
+Average time: 0.784835 Variance: 0.0151674 StdDev: 0.123156
+===74.871===
+Average fitness: 40.716 Variance: 0.151616 StdDev: 0.389379
+Average time: 0.410636 Variance: 0.00364629 StdDev: 0.0603845
+===49.914===
+Average fitness: 29.0133 Variance: 0.177795 StdDev: 0.421658
+Average time: 0.206669 Variance: 0.000474592 StdDev: 0.0217851
+===24.957===
+Average fitness: 14.6059 Variance: 0.0966818 StdDev: 0.310937
+Average time: 0.103127 Variance: 1.73599e-05 StdDev: 0.00416652
+===8x8===
+===129.236===
+Average fitness: 63.5473 Variance: 0.00276304 StdDev: 0.0525647
+Average time: 1.04244 Variance: 0.0388868 StdDev: 0.197197
+===96.927===
+Average fitness: 53.1935 Variance: 0.17025 StdDev: 0.412614
+Average time: 0.636339 Variance: 0.00586267 StdDev: 0.0765681
+===64.618===
+Average fitness: 37.9694 Variance: 0.30121 StdDev: 0.548826
+Average time: 0.297517 Variance: 0.000522767 StdDev: 0.0228641
+===32.309===
+Average fitness: 19.1095 Variance: 0.409334 StdDev: 0.639792
+Average time: 0.129167 Variance: 0.000225951 StdDev: 0.0150317
+===9x9===
+===163===
+Average fitness: 80.4555 Variance: 0.0511083 StdDev: 0.226071
+Average time: 2.03848 Variance: 0.130514 StdDev: 0.361267
+===122.25===
+Average fitness: 67.6241 Variance: 0.224881 StdDev: 0.474216
+Average time: 1.09984 Variance: 0.0214832 StdDev: 0.146572
+===81.5===
+Average fitness: 48.3948 Variance: 0.62526 StdDev: 0.790734
+Average time: 0.451922 Variance: 0.00269991 StdDev: 0.0519607
+===40.75===
+Average fitness: 24.7226 Variance: 0.516395 StdDev: 0.718606
+Average time: 0.164793 Variance: 0.00030525 StdDev: 0.0174714
