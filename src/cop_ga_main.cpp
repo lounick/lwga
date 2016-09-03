@@ -9,21 +9,21 @@ int main() {
   std::vector<std::pair<double, double> > nodes;
   std::vector<std::vector<double> > cost_mat;
   nodes.push_back(std::make_pair(0, 0));
-  for (int i = 1; i < 10; i++) {
-    for (int j = -4; j < 5; j++) {
+  for (int i = 1; i < 6; i++) {
+    for (int j = -2; j < 3; j++) {
       nodes.push_back(std::make_pair(i, j));
     }
   }
-  nodes.push_back(std::make_pair(10, 0));
+  nodes.push_back(std::make_pair(6, 0));
 
-  for (int i = 0; i < 83; i++) {
+  for (int i = 0; i < 27; i++) {
     std::vector<double> tmp_vec;
     cost_mat.push_back(tmp_vec);
   }
 
-  for (size_t i = 0; i < 83; i++) {
+  for (size_t i = 0; i < 27; i++) {
     cost_mat[i].push_back(0);
-    for (size_t j = i + 1; j < 83; j++) {
+    for (size_t j = i + 1; j < 27; j++) {
       double dist = find_distance(nodes[i], nodes[j]);
       cost_mat[i].push_back(dist);
       cost_mat[j].push_back(dist);
@@ -32,18 +32,18 @@ int main() {
 
   std::vector<double> rewards(cost_mat.size(), 1);
   rewards[0] = 0;
-  rewards[82] = 0;
+  rewards[26] = 0;
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 3000;
+  int nexp = 10;
 
   std::random_device rd;
   std::mt19937 g(rd());
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
-    Chromosome c = ga_cop(cost_mat, rewards, 81.5, 0, 82, g);
+    Chromosome c = ga_cop(cost_mat, rewards, 51*3/4, 0, 26, g);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
@@ -71,13 +71,19 @@ int main() {
       if (insert_ret.second) {
         for (size_t j = 0; j < free_vertices.size(); j++) {
           if (cost_mat[c.path[i]][free_vertices[j]] < 2) {
-            extras += std::exp(-2 * cost_mat[c.path[i]][free_vertices[j]]);
+            extras += std::exp((log(0.01)/2) * cost_mat[c.path[i]][free_vertices[j]]);
           }
         }
         fitness += rewards[c.path[i]] + extras;
       }
     }
     fitnesses.push_back(fitness);
+    std::cout << fitness << std::endl;
+    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
+    for(int i = 0; i < c.path.size(); ++i){
+      std::cout << c.path[i] << " ";
+    }
+    std::cout << std::endl;
 //    std::cout << fitness << std::endl;
 //    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
   }
