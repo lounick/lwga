@@ -476,7 +476,7 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
    * Select fittest
   */
 
-  uint_fast32_t pop_size = 100;
+  uint_fast32_t pop_size = 200;
   int tour_size = 3;
   int max_gen = 50;
 
@@ -514,8 +514,8 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
     }
 
     // Mutate
-    std::vector<size_t> indices = get_population_sample(new_pop.size(), 25, g);
-    uint_fast32_t M = 8; //number of cores
+    std::vector<size_t> indices = get_population_sample(new_pop.size(), 50, g);
+    uint_fast32_t M = 6; //number of cores
     uint_fast32_t chunk_size = indices.size()/M;
 
     /*for (size_t idx : indices) {

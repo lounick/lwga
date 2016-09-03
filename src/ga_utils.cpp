@@ -79,3 +79,32 @@ double get_path_cost(Path &path, Matrix<double> &cost_mat) {
   }
   return cost;
 }
+double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std::vector<double> rewards) {
+  double fitness = 0;
+  std::vector<uint_fast32_t> vertices(cost_mat.size());
+  std::iota(vertices.begin(), vertices.end(), 0);
+  std::vector<uint_fast32_t> free_vertices;
+  std::vector<uint_fast32_t> visited_vertices = p;
+  std::sort(visited_vertices.begin(), visited_vertices.end());
+  std::set_difference(vertices.begin(),
+                      vertices.end(),
+                      visited_vertices.begin(),
+                      visited_vertices.end(),
+                      std::back_inserter(free_vertices));
+  std::unordered_set<uint_fast32_t> seen;
+  std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret;
+  for (size_t i = 1; i < p.size() - 1; i++) {
+    double extras = 0;
+    insert_ret = seen.insert(p[i]);
+    if (insert_ret.second) {
+      for (size_t j = 0; j < free_vertices.size(); j++) {
+        if (cost_mat[p[i]][free_vertices[j]] < 2) {
+          extras += std::exp(-2 * cost_mat[p[i]][free_vertices[j]]);
+        }
+      }
+      fitness += rewards[p[i]] + extras;
+    }
+  }
+  return fitness;
+}
+

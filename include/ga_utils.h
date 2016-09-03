@@ -8,6 +8,7 @@
 #include "ga_types.h"
 #include <random>
 #include <algorithm>
+#include <unordered_set>
 
 double find_distance(Point2D a, Point2D b);
 
@@ -18,5 +19,7 @@ Path two_opt_swap(Path &path, size_t &i, size_t &k);
 std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat);
 
 double get_path_cost(Path &path, Matrix<double> &cost_mat);
+
+double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std::vector<double> rewards);
 
 #endif //LWGA_GA_UTILS_H
