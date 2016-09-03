@@ -3,6 +3,7 @@
 //
 
 #include "cop_ga.h"
+#include <fstream>
 
 int main(int argc, char* argv[]){
   std::vector<std::pair<double, double> > nodes;
@@ -15,8 +16,11 @@ int main(int argc, char* argv[]){
   std::mt19937 g(rd());
 
   int num_grids = 5;
-  int num_exp = 10;
+  int num_exp = 2000;
   double total_cost;
+
+  std::ofstream res_file;
+  res_file.open("/home/nick/ClionProjects/LWGA/runs/cop_results.txt");
 
   nodes.push_back(std::make_pair(0, 0));
   for (int i = 1; i < 6; ++i) {
@@ -50,11 +54,11 @@ int main(int argc, char* argv[]){
   max_costs.push_back(total_cost*3/4);
   max_costs.push_back(total_cost/2);
   max_costs.push_back(total_cost/4);
-  std::cout << "===5x5===" << std::endl;
+  res_file << "===5x5===" << std::endl;
   for(int mc = 0; mc < max_costs.size(); ++mc) {
     fitnesses.clear();
     times.clear();
-    std::cout << "===" << max_costs[mc] << "===" << std::endl;
+    res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
       Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 26, g);
@@ -71,7 +75,7 @@ int main(int argc, char* argv[]){
     }
     fit_var /= fitnesses.size();
     double fit_stddev = sqrt(fit_var);
-    std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+    res_file << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
 
     double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
     double time_var;
@@ -80,7 +84,7 @@ int main(int argc, char* argv[]){
     }
     time_var /= times.size();
     double time_stddev = sqrt(time_var);
-    std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+    res_file << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -121,11 +125,11 @@ int main(int argc, char* argv[]){
   max_costs.push_back(total_cost/2);
   max_costs.push_back(total_cost/4);
 
-  std::cout << "===6x6===" << std::endl;
+  res_file << "===6x6===" << std::endl;
   for(int mc = 0; mc < max_costs.size(); ++mc) {
     fitnesses.clear();
     times.clear();
-    std::cout << "===" << max_costs[mc] << "===" << std::endl;
+    res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
       Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 37, g);
@@ -142,7 +146,7 @@ int main(int argc, char* argv[]){
     }
     fit_var /= fitnesses.size();
     double fit_stddev = sqrt(fit_var);
-    std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+    res_file << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
 
     double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
     double time_var;
@@ -151,7 +155,7 @@ int main(int argc, char* argv[]){
     }
     time_var /= times.size();
     double time_stddev = sqrt(time_var);
-    std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+    res_file << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -192,11 +196,11 @@ int main(int argc, char* argv[]){
   max_costs.push_back(total_cost/2);
   max_costs.push_back(total_cost/4);
 
-  std::cout << "===7x7===" << std::endl;
+  res_file << "===7x7===" << std::endl;
   for(int mc = 0; mc < max_costs.size(); ++mc) {
     fitnesses.clear();
     times.clear();
-    std::cout << "===" << max_costs[mc] << "===" << std::endl;
+    res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
       Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 50, g);
@@ -213,7 +217,7 @@ int main(int argc, char* argv[]){
     }
     fit_var /= fitnesses.size();
     double fit_stddev = sqrt(fit_var);
-    std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+    res_file << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
 
     double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
     double time_var;
@@ -222,7 +226,7 @@ int main(int argc, char* argv[]){
     }
     time_var /= times.size();
     double time_stddev = sqrt(time_var);
-    std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+    res_file << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -263,11 +267,11 @@ int main(int argc, char* argv[]){
   max_costs.push_back(total_cost/2);
   max_costs.push_back(total_cost/4);
 
-  std::cout << "===8x8===" << std::endl;
+  res_file << "===8x8===" << std::endl;
   for(int mc = 0; mc < max_costs.size(); ++mc) {
     fitnesses.clear();
     times.clear();
-    std::cout << "===" << max_costs[mc] << "===" << std::endl;
+    res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
       Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 65, g);
@@ -284,7 +288,7 @@ int main(int argc, char* argv[]){
     }
     fit_var /= fitnesses.size();
     double fit_stddev = sqrt(fit_var);
-    std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+    res_file << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
 
     double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
     double time_var;
@@ -293,7 +297,7 @@ int main(int argc, char* argv[]){
     }
     time_var /= times.size();
     double time_stddev = sqrt(time_var);
-    std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+    res_file << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
@@ -334,11 +338,11 @@ int main(int argc, char* argv[]){
   max_costs.push_back(total_cost/2);
   max_costs.push_back(total_cost/4);
 
-  std::cout << "===9x9===" << std::endl;
+  res_file << "===9x9===" << std::endl;
   for(int mc = 0; mc < max_costs.size(); ++mc) {
     fitnesses.clear();
     times.clear();
-    std::cout << "===" << max_costs[mc] << "===" << std::endl;
+    res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
       Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 82, g);
@@ -355,7 +359,7 @@ int main(int argc, char* argv[]){
     }
     fit_var /= fitnesses.size();
     double fit_stddev = sqrt(fit_var);
-    std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+    res_file << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
 
     double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
     double time_var;
@@ -364,8 +368,10 @@ int main(int argc, char* argv[]){
     }
     time_var /= times.size();
     double time_stddev = sqrt(time_var);
-    std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+    res_file << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
   }
 
   //--------------------------------------------------------------------------------------------------------------------
+  res_file.close();
+  return 0;
 }
