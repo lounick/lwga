@@ -4,6 +4,7 @@
 
 #include "ga_utils.h"
 #include <cmath>
+#include <iostream>
 
 double find_distance(Point2D a, Point2D b) {
   return sqrt(pow(a.first - b.first, 2) + pow(a.second - b.second, 2));
@@ -106,5 +107,13 @@ double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std
     }
   }
   return fitness;
+}
+
+void print_path(Path p) {
+  std::cout << "[";
+  for (Path::iterator it = p.begin(); it != p.end() - 1; ++it){
+    std::cout << *it << ",";
+  }
+  std::cout << p.back() << "]" << std::endl;
 }
 

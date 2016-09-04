@@ -80,10 +80,7 @@ int main() {
     fitnesses.push_back(fitness);
     std::cout << fitness << std::endl;
     std::cout << get_path_cost(c.path, cost_mat) << std::endl;
-    for(int i = 0; i < c.path.size(); ++i){
-      std::cout << c.path[i] << " ";
-    }
-    std::cout << std::endl;
+    print_path(c.path);
 //    std::cout << fitness << std::endl;
 //    std::cout << get_path_cost(c.path, cost_mat) << std::endl;
   }

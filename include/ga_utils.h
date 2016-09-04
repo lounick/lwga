@@ -22,4 +22,6 @@ double get_path_cost(Path &path, Matrix<double> &cost_mat);
 
 double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std::vector<double> rewards);
 
+void print_path(Path p);
+
 #endif //LWGA_GA_UTILS_H
