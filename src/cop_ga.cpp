@@ -79,7 +79,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, 
 
   for (uint_fast32_t iter = 0; iter < 10; ++iter) {
     if (std::generate_canonical<double, 10>(g) < 0.9) {
-      if (mutated.cost >= 0.95 * max_cost) {
+      if (mutated.cost >= 0.99 * max_cost) {
         //TODO: This is bound to have different effect in different grid sizes and budgets.
         //TODO: Should come up with something including the average travel cost or something smarter.
         /*
@@ -236,7 +236,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, 
         }
       }
       else {
-        if (mutated.cost >= 0.95 * max_cost) {
+        if (mutated.cost >= 0.99 * max_cost) {
           size_t to_remove = 0;
           double min_loss = std::numeric_limits<double>::infinity();
           for (size_t i = 1; i < mutated.path.size() - 1; ++i) {
@@ -478,7 +478,7 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
 
   uint_fast32_t pop_size = 200;
   int tour_size = 3;
-  int max_gen = 75;
+  int max_gen = 50;
 
   // Initialise population
   std::vector<Chromosome> pop;
@@ -515,7 +515,7 @@ Chromosome ga_cop(std::vector<std::vector<double> > &cost_mat,
 
     // Mutate
     std::vector<size_t> indices = get_population_sample(new_pop.size(), 50, g);
-    uint_fast32_t M = 6; //number of cores
+    uint_fast32_t M = 8; //number of cores
     uint_fast32_t chunk_size = indices.size()/M;
 
     /*for (size_t idx : indices) {

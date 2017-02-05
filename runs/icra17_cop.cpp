@@ -16,7 +16,7 @@ int main(int argc, char* argv[]){
   std::mt19937 g(rd());
 
   int num_grids = 5;
-  int num_exp = 2000;
+  int num_exp = 1000;
   double total_cost;
 
   std::ofstream res_file;
