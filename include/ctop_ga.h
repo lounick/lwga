@@ -10,6 +10,7 @@
 #include <cmath>
 #include <utility>
 #include <algorithm>
+#include <iterator>
 #include <cfloat>
 #include <set>
 #include <unordered_set>
@@ -35,21 +36,31 @@ class Chromosome {
  public:
   std::vector<Gene> genes;
   double total_fitness;
-  void evaluate_chromosome();
+  void evaluate_chromosome(Matrix<double> &cost_mat,
+                           std::vector<double> &rewards,
+                           std::vector<double> &max_cost_v);
   void mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, std::vector<double> &max_cost_v, std::mt19937 &g);
 };
 
 
+Chromosome generate_chromosome(Matrix<double> &cost_mat,
+                               std::vector<double> &max_cost_v,
+                               uint idx_start,
+                               uint idx_finish,
+                               std::mt19937 &g);
 
-Chromosome generate_chromosome (Matrix<double> &cost_mat,
-                                std::vector<double> &max_cost_v,
-                                uint idx_start,
-                                uint idx_finish,
-                                std::mt19937 &g);
+void expand_neighbours(std::vector<uint_fast32_t> &neighbours,
+                       std::vector<uint_fast32_t> &checked,
+                       const std::vector<uint_fast32_t> &vertices,
+                       const Matrix<double> &cost_mat);
 
 Chromosome tournament_select(std::vector<Chromosome> &population, uint tour_size, std::mt19937 &g);
 
-void cx(Chromosome &c1, Chromosome &c2, Matrix<double> &cost_mat, std::vector<double> &max_cost_v, std::vector<double> &rewards);
+void cx(Chromosome &c1,
+        Chromosome &c2,
+        Matrix<double> &cost_mat,
+        std::vector<double> &max_cost_v,
+        std::vector<double> &rewards);
 
 void par_mutate(std::vector<size_t> indices,
                 std::vector<Chromosome> &pop,
@@ -58,10 +69,10 @@ void par_mutate(std::vector<size_t> indices,
                 std::vector<double> &max_cost_v);
 
 Chromosome ga_ctop(Matrix<double> &cost_mat,
-                  std::vector<double> &rewards,
-                  std::vector<double> max_cost_v,
-                  uint idx_start,
-                  uint idx_finish,
-                  std::mt19937 &g);
+                   std::vector<double> &rewards,
+                   std::vector<double> max_cost_v,
+                   uint idx_start,
+                   uint idx_finish,
+                   std::mt19937 &g);
 
 #endif //LWGA_CTOP_GA_H
