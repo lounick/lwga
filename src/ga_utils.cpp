@@ -117,3 +117,9 @@ void print_path(Path p) {
   std::cout << p.back() << "]" << std::endl;
 }
 
+std::pair<std::vector<Vertex>, std::vector<double>>
+generate_grid(double x_size, double y_size, std::pair<double, double> idx_start) {
+
+  return std::pair<std::vector<Vertex>, std::vector<double>>();
+}
+

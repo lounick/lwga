@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <unordered_set>
 
+typedef std::pair<double, double> Vertex;
+
 double find_distance(Point2D a, Point2D b);
 
 std::vector<size_t> get_population_sample(size_t pop_size, int samples, std::mt19937 &g);
@@ -23,5 +25,7 @@ double get_path_cost(Path &path, Matrix<double> &cost_mat);
 double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std::vector<double> rewards);
 
 void print_path(Path p);
+
+std::pair<std::vector<Vertex>, std::vector<double>> generate_grid (double x_size, double y_size, std::pair<double, double> idx_start);
 
 #endif //LWGA_GA_UTILS_H
