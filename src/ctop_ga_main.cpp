@@ -62,12 +62,12 @@ int main(){
   rewards[0] = 0;
   rewards[82] = 0;
   uint_fast32_t num_robots = 6;
-//  std::vector<double> max_cost_v(num_robots, 3*((num_robots-1)+(82+81.0)/num_robots)/4);
-  std::vector<double> max_cost_v(num_robots, 3*((82+81.0)/num_robots)/4);
+//  std::vector<double> max_cost_v(num_robots, 4*((num_robots-1)+(82+81.0)/num_robots)/4);
+  std::vector<double> max_cost_v(num_robots, 4*((82+81.0)/num_robots)/4);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 1000;
+  int nexp = 100;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -145,6 +145,7 @@ int main(){
   std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
 
   std::cout << "best_fit: " << best_fit << " max_cost: " << max_cost_v[0] << std::endl;
+  for(size_t i = 0; i < num_robots; i++){std::cout << best.genes[i].cost << std::endl;}
   std::cout << "[";
   for(size_t i = 0; i < num_robots; i++){
 //    std::cout << best.genes[i].cost << " [";
