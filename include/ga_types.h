@@ -6,6 +6,8 @@
 #define LWGA_GA_TYPES_H
 
 #include <vector>
+#include <limits>
+#include <cmath>
 #include <cstdint>
 
 template <typename T> using Matrix = std::vector<std::vector<T> >;

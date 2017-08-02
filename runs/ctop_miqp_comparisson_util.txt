@@ -1,0 +1,35 @@
+\begin{table}[]
+\centering
+\caption{}
+\label{tab:}
+\begin{tabular}{llllll}
+\hline \hline
+\multirow{2}{*}{Algorithm} & \multicolumn{5}{c}{Number of Robots} \Tstrut \\
+& 2 & 3 & 4 & 5 &6 \Bstrut \\ \hline
+COP 5\% & & & & & \Tstrut \\
+EV-GRASP & 80.1134 & 79.8083 & 79.4456 & 78.6412 & 76.5329 \\
+St.Dev. & 0.119221 & 0.135489 & 0.220825 & 0.306561 & 0.388255 \\
+EV-NNGRASP & 80.176 & 79.6602 & 79.3742 & 78.2989 & 76.4234 \\
+St.Dev. & 0.160415 & 0.187093 & 0.234922 & 0.353972 & 0.397081 \\
+\hline
+\end{tabular}
+\end{table}
+
+Limited energy experiments
+\begin{table}[]
+\centering
+\caption{}
+\label{tab:}
+\begin{tabular}{lllll}
+\hline \hline
+\multirow{2}{*}{Algorithm} & \multicolumn{4}{c}{Budget} \Tstrut \\
+& 100\% & 75\%  & 50\%  & 25\% \Bstrut \\ \hline
+COP 5\% & & & & \Tstrut \\
+EV-GRASP & 79.8033 & 70.078 & 51.4714 & 15.131 \
+St.Dev. & 0.134429 & 0.297029 & 0.23907 & 0.0859545 \
+EV-NNGRASP & 79.6547 & 69.9189 & 51.4661 & 15.1294 \
+St.Dev. & 0.189604 & 0.365437 & 0.250738 & 0.0846465 \
+\hline
+\end{tabular}
+\end{table}
+

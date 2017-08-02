@@ -61,24 +61,24 @@ int main(){
   std::vector<double> rewards(cost_mat.size(), 1);
   rewards[0] = 0;
   rewards[82] = 0;
-  uint_fast32_t num_robots = 6;
+  uint_fast32_t num_robots = 3;
 //  std::vector<double> max_cost_v(num_robots, 4*((num_robots-1)+(82+81.0)/num_robots)/4);
-  std::vector<double> max_cost_v(num_robots, 4*((82+81.0)/num_robots)/4);
+  std::vector<double> max_cost_v(num_robots, 4*((82+81.0)/num_robots)/4.0);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 100;
+  int nexp = 1000;
 
   std::random_device rd;
   std::mt19937 g(rd());
 
-  Chromosome best;
+  Chromosome best(cost_mat.size(), num_robots, 0, 82);
   double best_fit = 0;
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
 //    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 26, g);
-    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g);
+    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 1000, 0, 0, "NNGRASP");
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
@@ -124,7 +124,7 @@ int main(){
     if(fitness > best_fit){
           best = c;
           best_fit = fitness;
-      };
+    };
   }
   double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
   double fit_var;
@@ -153,8 +153,13 @@ int main(){
     for(size_t j = 0; j < best.genes[i].path.size(); j++){
       if(j < best.genes[i].path.size() - 1)
         std::cout << best.genes[i].path[j] << ", ";
-      else
-        std::cout << best.genes[i].path[j] << "], ";
+      else {
+        if (i < num_robots - 1) {
+          std::cout << best.genes[i].path[j] << "], ";
+        } else {
+          std::cout << best.genes[i].path[j] << "]";
+        }
+      }
     }
   }
   std::cout << "]" << std::endl;

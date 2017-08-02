@@ -34,7 +34,7 @@ Path two_opt_swap(Path &path, size_t &i, size_t &k) {
   return new_path;
 }
 
-std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat) {
+std::pair<Path, double> two_opt(Path &path, const Matrix<double> &cost_mat) {
 
   bool start_again = true;
   Path tmp_path = std::vector<uint_fast32_t>(path);
@@ -70,7 +70,7 @@ std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat) {
   return std::make_pair(tmp_path, best_cost);
 }
 
-double get_path_cost(Path &path, Matrix<double> &cost_mat) {
+double get_path_cost(Path &path, const Matrix<double> &cost_mat) {
   double cost = 0;
   for (Path::iterator it = path.begin() + 1; it != path.end(); ++it) {
     cost += cost_mat[*(it - 1)][*it];
@@ -121,5 +121,33 @@ std::pair<std::vector<Vertex>, std::vector<double>>
 generate_grid(double x_size, double y_size, std::pair<double, double> idx_start) {
 
   return std::pair<std::vector<Vertex>, std::vector<double>>();
+}
+void
+mutual_two_opt(Path &path1, Path &path2, const Matrix<double_t> &cost_mat, double_t max_cost1, double_t max_cost2) {
+  size_t num_vertices = cost_mat.size();
+  uint_fast32_t start_vertex = path1.front();
+  uint_fast32_t end_vertex = path1.back();
+
+  Path mutual = path1;
+  Path::iterator it = path2.end() - 1;
+  while (it != path2.begin()){
+    mutual.push_back(*it);
+    --it;
+  }
+  mutual.push_back(*it);
+
+  std::pair<Path, double> two_opt_ret = two_opt(mutual,cost_mat);
+  mutual = two_opt_ret.first;
+
+  path1.clear();
+  path2.clear();
+
+  while (mutual.back() != end_vertex){
+    path2.push_back(mutual.back());
+    mutual.pop_back();
+  }
+  path2.push_back(mutual.back());
+  mutual.pop_back();
+  path1.assign(mutual.begin(), mutual.end());
 }
 

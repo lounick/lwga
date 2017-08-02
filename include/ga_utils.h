@@ -18,9 +18,11 @@ std::vector<size_t> get_population_sample(size_t pop_size, int samples, std::mt1
 
 Path two_opt_swap(Path &path, size_t &i, size_t &k);
 
-std::pair<Path, double> two_opt(Path &path, Matrix<double> &cost_mat);
+std::pair<Path, double> two_opt(Path &path, const Matrix<double> &cost_mat);
 
-double get_path_cost(Path &path, Matrix<double> &cost_mat);
+void mutual_two_opt(Path &path1, Path &path2, const Matrix<double_t> &cost_mat, double_t max_cost1, double_t max_cost2);
+
+double get_path_cost(Path &path, const Matrix<double> &cost_mat);
 
 double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std::vector<double> rewards);
 

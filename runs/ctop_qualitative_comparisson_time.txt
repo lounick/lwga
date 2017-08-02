@@ -1,0 +1,49 @@
+\begin{table}[]
+\centering
+\caption{}
+\label{tab:}
+\begin{tabular}{lllll}
+\hline \hline
+\multirow{2}{*}{Algorithm} & \multicolumn{5}{c}{Number of Chromosomes} \Tstrut \\
+& 1 & 10 & 100 & 1000 \Bstrut \\ \hline
+EV-GRASP & 0.000849969 & 0.00866843 & 0.0909438 & 0.937424 \\
+St.Dev. & 7.6922e-05 & 0.000172183 & 0.000655789 & 0.0137128 \\
+EV-NNGRASP & 0.000221265 & 0.00242569 & 0.0275592 & 0.308951 \\
+St.Dev. & 0.00043489 & 0.000111121 & 0.000468782 & 0.00718627 \\
+\hline
+\end{tabular}
+\end{table}
+
+Local search effect
+
+\begin{table}[]
+\centering
+\caption{}
+\label{tab:}
+\begin{tabular}{clllll}
+\hline \hline
+\multirow{2}{*}{Number of Generations} &multirow{2}{*}{Algortithm} & \multicolumn{4}{c}{Mutation Rate} \Tstrut \\
+& & 25\% & 50\% & 75\% & 100\% \Bstrut \\ \hline
+\multirow{4}{*}{1}&EV-GRASP & 0.0936 & 0.0948597 & 0.0958703 & 0.0971331 \\
+&St.Dev. & 0.000912867 & 0.000961938 & 0.000994804 & 0.00104145 \\
+&EV-NNGRASP & 0.0304763 & 0.031992 & 0.0333588 & 0.0347638 \\
+&St.Dev. & 0.000589718 & 0.000747724 & 0.000758145 & 0.000907751 \\
+\hline
+\multirow{4}{*}{10}&EV-GRASP & 0.113141 & 0.124344 & 0.135927 & 0.146894 \\
+&St.Dev. & 0.0015603 & 0.00157303 & 0.00191618 & 0.00228948 \\
+&EV-NNGRASP & 0.0511491 & 0.0633213 & 0.0747861 & 0.0871141 \\
+&St.Dev. & 0.00116326 & 0.00154543 & 0.00175927 & 0.00224787 \\
+\hline
+\multirow{4}{*}{100}&EV-GRASP & 0.307041 & 0.4204 & 0.550282 & 0.670643 \\
+&St.Dev. & 0.00674839 & 0.0121722 & 0.0146984 & 0.0165869 \\
+&EV-NNGRASP & 0.249503 & 0.364324 & 0.49114 & 0.611605 \\
+&St.Dev. & 0.00717914 & 0.0111626 & 0.0139164 & 0.018184 \\
+\hline
+\multirow{4}{*}{1000}&EV-GRASP & 2.33211 & 3.51406 & 4.85339 & 5.9823 \\
+&St.Dev. & 0.066333 & 0.124253 & 0.140711 & 0.135566 \\
+&EV-NNGRASP & 2.22565 & 3.38885 & 4.52334 & 5.76344 \\
+&St.Dev. & 0.0635029 & 0.129213 & 0.177635 & 0.215228 \\
+\hline
+\hline
+\end{tabular}
+\end{table}
