@@ -22,13 +22,13 @@
 #include "ga_types.h"
 #include "ga_utils.h"
 
-
 class Gene {
  public:
   Path path;
   double fitness;
   double cost;
-  void evaluate_gene(Matrix<double> &cost_mat, std::vector<double> &rewards, std::vector<uint_fast32_t> &free_vertices);
+  void evaluate_gene(const Matrix<double> &cost_mat, const std::vector<double> &rewards,
+                     const std::vector<uint_fast32_t> &free_vertices);
   void calculate_cost(Matrix<double> &cost_mat);
   void mutate(Matrix<double> &cost_mat, std::vector<double> &rewards, double max_cost, std::mt19937 &g);
 };
@@ -75,6 +75,10 @@ class Chromosome {
   std::vector<uint_fast32_t> all_vertices;
   std::vector<uint_fast32_t> free_vertices;
   double total_fitness;
+  void insertGene(Gene &gene);
+  void removeCommonVertices(const Gene &gene);
+  void evaluateGenes(const Matrix<double> &cost_mat, const std::vector<double> &rewards const,
+                     std::vector<uint_fast32_t> free_vertices);
   void evaluate_chromosome(Matrix<double> &cost_mat,
                            std::vector<double> &rewards,
                            std::vector<double> &max_cost_v);
@@ -116,7 +120,6 @@ class Chromosome {
   }
 };
 
-
 Chromosome generate_chromosome(Matrix<double> &cost_mat,
                                std::vector<double> &max_cost_v,
                                std::vector<double> &rewards,
@@ -136,7 +139,16 @@ void cx(Chromosome &c1,
         Chromosome &c2,
         Matrix<double> &cost_mat,
         std::vector<double> &max_cost_v,
-        std::vector<double> &rewards);
+        std::vector<double> &rewards,
+        std::mt19937 &g);
+
+void construct_offspring(Chromosome &offspring,
+                         const Chromosome &parent1,
+                         const Chromosome &parent2,
+                         Matrix<double> &cost_mat,
+                         std::vector<double> &max_cost_v,
+                         std::vector<double> &rewards,
+                         std::mt19937 &g);
 
 void par_mutate(std::vector<size_t> indices,
                 std::vector<Chromosome> &pop,
