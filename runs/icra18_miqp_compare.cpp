@@ -22,11 +22,16 @@ int main(int argc, char *argv[]) {
   std::random_device rd;
   std::mt19937 g(rd());
 
-  int num_exp = 1000;
+  int num_exp = 10;
   double_t total_cost = 81.0 + 82.0;
 
   std::ofstream util_file;
   std::ofstream time_file;
+  std::ofstream util_results_file;
+  std::ofstream time_results_file;
+
+  std::vector<std::vector<double> > util_results;
+  std::vector<std::vector<double> > time_results;
 
   nodes.push_back(std::make_pair(0, 0));
   for (int i = 1; i < 10; i++) {
@@ -55,7 +60,7 @@ int main(int argc, char *argv[]) {
   rewards[82] = 0;
 
 
-  grasp_methods = {std::string("GRASP"), std::string("NNGRASP")};
+  grasp_methods = {std::string("GRASP"), std::string("NNGRASP"), std::string("RANDOM")};
 
   num_robots = {2, 3, 4, 5, 6};
   util_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_miqp_comparisson_util.txt");
@@ -123,7 +128,7 @@ int main(int argc, char *argv[]) {
             if (insert_ret.second) {
               for (size_t j = 0; j < free_vertices.size(); j++) {
                 if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-                  extras += std::exp(-2 * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+                  extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
                 }
               }
               fitness += rewards[c.genes[robot].path[i]] + extras;
@@ -150,6 +155,21 @@ int main(int argc, char *argv[]) {
       double time_stddev = sqrt(time_var);
       mean_times.push_back(avg_time);
       stdev_times.push_back(time_stddev);
+
+      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + method + "_" + std::to_string(nr)+"_robots_util.csv");
+      std::vector<double_t>::iterator it;
+      for (it = fitnesses.begin(); it != fitnesses.end() - 1; ++it){
+        util_results_file << *it << ",";
+      }
+      util_results_file << fitnesses.back() << "\n";
+      util_results_file.close();
+
+      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + method + "_" + std::to_string(nr)+"_robots_time.csv");
+      for (it = times.begin(); it != times.end() - 1; ++it){
+        time_results_file << *it << ",";
+      }
+      time_results_file << fitnesses.back() << "\n";
+      time_results_file.close();
     }
     util_file << "EV-" << method << " ";
     for (auto &mean_fit: mean_fitnesses) {
@@ -253,7 +273,7 @@ int main(int argc, char *argv[]) {
             if (insert_ret.second) {
               for (size_t j = 0; j < free_vertices.size(); j++) {
                 if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-                  extras += std::exp(-2 * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+                  extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
                 }
               }
               fitness += rewards[c.genes[robot].path[i]] + extras;
@@ -280,6 +300,20 @@ int main(int argc, char *argv[]) {
       double time_stddev = sqrt(time_var);
       mean_times.push_back(avg_time);
       stdev_times.push_back(time_stddev);
+      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + method + "_" + std::to_string(nr)+"_robots_util.csv");
+      std::vector<double_t>::iterator it;
+      for (it = fitnesses.begin(); it != fitnesses.end() - 1; ++it){
+        util_results_file << *it << ",";
+      }
+      util_results_file << fitnesses.back() << "\n";
+      util_results_file.close();
+
+      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + method + "_" + std::to_string(nr)+"_robots_time.csv");
+      for (it = times.begin(); it != times.end() - 1; ++it){
+        time_results_file << *it << ",";
+      }
+      time_results_file << fitnesses.back() << "\n";
+      time_results_file.close();
     }
     util_file << "EV-" << method << " ";
     for (auto &mean_fit: mean_fitnesses) {
@@ -382,7 +416,7 @@ int main(int argc, char *argv[]) {
             if (insert_ret.second) {
               for (size_t j = 0; j < free_vertices.size(); j++) {
                 if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-                  extras += std::exp(-2 * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+                  extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
                 }
               }
               fitness += rewards[c.genes[robot].path[i]] + extras;
@@ -515,7 +549,7 @@ int main(int argc, char *argv[]) {
               if (insert_ret.second) {
                 for (size_t j = 0; j < free_vertices.size(); j++) {
                   if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-                    extras += std::exp(-2 * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+                    extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
                   }
                 }
                 fitness += rewards[c.genes[robot].path[i]] + extras;

@@ -9,13 +9,6 @@ void
 Gene::evaluate_gene(Matrix<double> &cost_mat, std::vector<double> &rewards, std::vector<uint_fast32_t> &free_vertices) {
   fitness = 0;
 
-//  static std::vector<uint_fast32_t> vertices;
-//  if(vertices.size() == 0) {
-//    vertices.reserve(cost_mat.size());
-//    for (uint_fast32_t i = 0; i < cost_mat.size(); ++i)
-//      vertices.push_back(i);
-//  }
-
   std::unordered_set<uint_fast32_t> seen;
   std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret;
 
@@ -41,13 +34,6 @@ Gene::evaluate_gene(Matrix<double> &cost_mat, std::vector<double> &rewards, std:
 }
 
 void Gene::calculate_cost(Matrix<double> &cost_mat) {
-//  cost = 0;
-//  for (Path::iterator it = path.begin() + 1; it != path.end(); ++it) {
-//    cost += cost_mat[*(it - 1)][*it];
-//    if (it != (path.end() - 1)) {
-//      cost += 1;
-//    }
-//  }
   cost = get_path_cost(path, cost_mat);
 }
 
@@ -113,80 +99,19 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
    * Same as mutate for one vehicle but apply sequentially for many vehicles.
    */
   uint_fast32_t num_robots = max_cost_v.size();
-  Chromosome mutated(cost_mat.size(), num_robots, genes.front().path.front(), genes.front().path.back());
-  mutated.genes.reserve(num_robots);
-  mutated.genes = genes;
+  Chromosome mutated(*this);
+//  Chromosome mutated(cost_mat.size(), num_robots, genes.front().path.front(), genes.front().path.back());
+//  mutated.genes.reserve(num_robots);
+//  mutated.genes = genes;
+  //mutated.evaluate_chromosome(cost_mat, rewards, max_cost_v);
+//  mutated.total_fitness = total_fitness;
 
-  //First perform a 2-opt in each gene.
-//  for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
-//    Gene gene;
-//    gene.path.reserve(cost_mat.size());
-//    std::pair<Path, double> two_opt_return;
-//    two_opt_return = two_opt(genes[robot].path, cost_mat);
-//    gene.path = two_opt_return.first;
-//    gene.cost = two_opt_return.second + gene.path.size() - 2;
-////    gene.evaluate_gene(cost_mat,rewards);
-//    mutated.genes.push_back(gene);
-//
-//  }
-
-//  std::unordered_set<uint_fast32_t> seen1;
-//  std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret1;
-//  for (std::vector<Gene>::iterator it = mutated.genes.begin(); it != mutated.genes.end(); ++it) {
-//    for (std::vector<uint_fast32_t>::iterator path_it = it->path.begin() + 1; path_it != it->path.end() - 1;
-//         ++path_it) {
-//      insert_ret1 = seen1.insert(*path_it);
-//    }
-//  }
-//
-//  std::vector<uint_fast32_t> vertices(cost_mat.size());
-//  std::iota(vertices.begin(), vertices.end(), 0);
-//  std::vector<uint_fast32_t> free_vertices;
-//  std::vector<uint_fast32_t> visited_vertices(seen1.begin(), seen1.end());
-//  visited_vertices.push_back(mutated.genes[0].path.front());
-//  visited_vertices.push_back(mutated.genes[0].path.back());
-//  std::sort(visited_vertices.begin(), visited_vertices.end());
-//  std::set_difference(vertices.begin(),
-//                      vertices.end(),
-//                      visited_vertices.begin(),
-//                      visited_vertices.end(),
-//                      std::back_inserter(free_vertices));
-
-//  for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
-////    mutated.genes[robot].calculate_cost(cost_mat);
-//    mutated.genes[robot].evaluate_gene(cost_mat, rewards, free_vertices);
-//  }
-//
-//  // Remove any duplicates. Though there shouldn't be any.
-//  std::sort(mutated.genes.begin(),
-//            mutated.genes.end(),
-//            [](const Gene &g1, const Gene &g2) -> bool { return g1.fitness > g2.fitness; });
-//  std::unordered_set<uint_fast32_t> seen(mutated.genes.front().path.begin(), mutated.genes.front().path.end());
-//  std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret;
-//  for (std::vector<Gene>::iterator it = mutated.genes.begin() + 1; it != mutated.genes.end(); ++it) {
-//    std::vector<uint_fast32_t> new_path;
-//    new_path.reserve(it->path.size());
-//    new_path.push_back(it->path.front());
-//    for (std::vector<uint_fast32_t>::iterator path_it = it->path.begin() + 1; path_it != it->path.end() - 1;
-//         ++path_it) {
-//      insert_ret = seen.insert(*path_it);
-//      if (insert_ret.second) {
-//        new_path.push_back(*path_it);
-//      }
-//    }
-//    new_path.push_back(it->path.back());
-//    it->path = new_path;
-//  }
-//
-//  for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
-//    mutated.genes[robot].calculate_cost(cost_mat);
-//    mutated.genes[robot].evaluate_gene(cost_mat, rewards, free_vertices);
-//  }
   std::uniform_real_distribution<> dis(0, 1);
   for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
     for (uint_fast32_t iter = 0; iter < 10; ++iter) {
       if (dis(g) < 0.9) {
-        if (mutated.genes[robot].cost >= 0.95 * max_cost_v[robot]) {
+        double max_cost = 0.95 * max_cost_v[robot];
+        if (mutated.genes[robot].cost > max_cost || logically_equal(mutated.genes[robot].cost, max_cost)) {
           //TODO: This is bound to have different effect in different grid sizes and budgets.
           //TODO: Should come up with something including the average travel cost or something smarter.
           /*
@@ -207,13 +132,16 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
 
           double best_cost = mutated.genes[robot].cost;
           std::vector<uint_fast32_t> best_path = mutated.genes[robot].path;
-          double best_fitness = mutated.genes[robot].fitness;
+          double best_fitness = mutated.genes[robot].fitness;//mutated.total_fitness;//mutated.genes[robot].fitness;
+//          double best_path_fitness = mutated.genes[robot].fitness;
           uint_fast32_t best_vertex = rand_vertex;
           uint_fast32_t prev_vertex = mutated.genes[robot].path[rand_vertex_idx - 1];
           uint_fast32_t next_vertex = mutated.genes[robot].path[rand_vertex_idx + 1];
           double cost_removed = mutated.genes[robot].cost
               - cost_mat[prev_vertex][rand_vertex]
               - cost_mat[rand_vertex][next_vertex];
+          free_vertices.push_back(rand_vertex);
+          seen_vertices.erase(rand_vertex);
           for (uint_fast32_t i:available_vertices) {
             Gene tmp_c;
             tmp_c.path.reserve(cost_mat.size());
@@ -223,111 +151,45 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
                 + cost_mat[i][next_vertex];
             tmp_c.path.erase(tmp_c.path.begin() + rand_vertex_idx);
             tmp_c.path.insert(tmp_c.path.begin() + rand_vertex_idx, i);
-            if (tmp_c.cost <= max_cost_v[robot]) {
+//            free_vertices.erase(std::find(free_vertices.begin(), free_vertices.end(), i));
+//            seen_vertices.insert(i);
+            if (tmp_c.cost < max_cost_v[robot] || logically_equal(tmp_c.cost, max_cost_v[robot])) {
+//              double total_fitness = 0.0;
               tmp_c.evaluate_gene(cost_mat, rewards, free_vertices);
-              if (tmp_c.fitness > best_fitness) {
-                best_fitness = tmp_c.fitness;
+//              total_fitness += tmp_c.fitness;
+//              for (uint_fast32_t gene_c = 0; gene_c < mutated.genes.size(); ++gene_c){
+//                if (gene_c == robot)
+//                  continue;
+//                mutated.genes[gene_c].evaluate_gene(cost_mat, rewards, free_vertices);
+//                total_fitness += mutated.genes[gene_c].fitness;
+//              }
+              if (tmp_c.fitness > best_fitness) {//total_fitness > best_fitness) {//tmp_c.fitness > best_fitness) {
+                best_fitness = tmp_c.fitness;//total_fitness;//tmp_c.fitness;
+//                best_path_fitness = tmp_c.fitness;
                 best_cost = tmp_c.cost;
                 best_path = tmp_c.path;
                 best_vertex = i;
               }
             }
+//            free_vertices.push_back(i);
+//            seen_vertices.erase(i);
           }
           mutated.genes[robot].path = best_path;
           mutated.genes[robot].fitness = best_fitness;
           mutated.genes[robot].cost = best_cost;
+//          mutated.total_fitness = best_fitness;
           if (best_vertex != rand_vertex) {
-            free_vertices.push_back(rand_vertex);
+//            free_vertices.push_back(rand_vertex);
             free_vertices.erase(std::find(free_vertices.begin(), free_vertices.end(), best_vertex));
             seen_vertices.insert(best_vertex);
-            seen_vertices.erase(rand_vertex);
+//            seen_vertices.erase(rand_vertex);
+          } else {
+            free_vertices.erase(std::find(free_vertices.begin(),free_vertices.end(), rand_vertex));
+            seen_vertices.insert(rand_vertex);
           }
         } else {
           if (free_vertices.size() == 0)
             continue;
-          //============================================================================================================
-//          if (mutated.genes[robot].path.size() == 2)
-//            continue;
-//          std::uniform_int_distribution<> dis(1, mutated.genes[robot].path.size() - 2);
-//          size_t vertex_idx = dis(g);
-//          uint_fast32_t vertex = mutated.genes[robot].path[vertex_idx];
-//          std::vector<uint_fast32_t>::iterator free_it;
-//          std::vector<uint_fast32_t> neighbors;
-//          neighbors.reserve(free_vertices.size());
-//          for (free_it = free_vertices.begin(); free_it != free_vertices.end(); ++free_it) {
-//            if (cost_mat[vertex][*free_it] < 2) {
-//              neighbors.push_back(*free_it);
-//            }
-//          }
-//
-//
-////           Iterate over neighbours and find each ones weight
-////           Choose neighbour to add based on weight
-////           Add him.
-//
-//          if (neighbors.size() > 0) {
-//            std::uniform_real_distribution<> dis(0, 1);
-//            std::vector<double> distance_weights;
-//            std::vector<double> neighbour_weights;
-//            distance_weights.reserve(neighbors.size());
-//            neighbour_weights.reserve(neighbors.size());
-//            std::vector<double> combined;
-//            combined.reserve(neighbors.size());
-//            std::vector<double> cdf;
-//            cdf.reserve(neighbors.size());
-//            double tot_dist = 0;
-//            double tot_neighbours = 0;
-//            if (seen_vertices.size() > 0) {
-//              std::vector<uint_fast32_t>::iterator avail_it;
-//              for (avail_it = neighbors.begin(); avail_it != neighbors.end(); ++avail_it) {
-//                double mean_dist = 0;
-//                double free_neighbours = 0;
-//                std::unordered_set<uint_fast32_t>::iterator used_it;
-//                for (used_it = seen_vertices.begin(); used_it != seen_vertices.end(); ++used_it) {
-//                  mean_dist += cost_mat[*avail_it][*used_it];
-//                }
-//                std::vector<uint_fast32_t>::iterator free_it;
-//                for (free_it = free_vertices.begin(); free_it != free_vertices.end(); ++free_it) {
-//                  if (cost_mat[*avail_it][*free_it] < 2) {
-//                    ++free_neighbours;
-//                  }
-//                }
-//                mean_dist = mean_dist / double(seen_vertices.size());
-//                tot_dist += mean_dist;
-//                tot_neighbours += free_neighbours;
-//                distance_weights.push_back(mean_dist);
-//                neighbour_weights.push_back(free_neighbours);
-//              }
-//
-//              std::vector<double>::iterator dist_weight_it = distance_weights.begin();
-//              std::vector<double>::iterator neigh_weight_it = neighbour_weights.begin();
-//              double tot_combined = 0;
-//              for (; dist_weight_it != distance_weights.end(); ++dist_weight_it, ++neigh_weight_it) {
-//                combined.push_back(*dist_weight_it + *neigh_weight_it);
-//                tot_combined += *dist_weight_it + *neigh_weight_it;
-//              }
-//              std::vector<double>::iterator combined_it;
-//              cdf.push_back(combined.front() / tot_combined);
-//              for (combined_it = combined.begin() + 1; combined_it != combined.end(); ++combined_it) {
-//                cdf.push_back(cdf.back() + (*combined_it / tot_combined));
-//              }
-//            }
-//            double prob = dis(g);
-//            auto vertex_pos = std::lower_bound(cdf.cbegin(), cdf.cend(), prob);
-//            uint_fast32_t next_vertex = neighbors[std::distance(cdf.cbegin(), vertex_pos)];
-////            double next_vertex_cost = cost_mat[path.back()][next_vertex] + 1;
-//            double travel_increase = cost_mat[vertex][next_vertex]
-//                + cost_mat[next_vertex][mutated.genes[robot].path[vertex_idx + 1]]
-//                - cost_mat[vertex][mutated.genes[robot].path[vertex_idx + 1]];
-//            if (mutated.genes[robot].cost + travel_increase + 1 <= max_cost_v[robot]) {
-//              mutated.genes[robot].path.insert(mutated.genes[robot].path.begin() + vertex_idx + 1, next_vertex);
-//              mutated.genes[robot].cost += travel_increase + 1;
-//              mutated.genes[robot].evaluate_gene(cost_mat, rewards, free_vertices);
-//              free_vertices.erase(std::remove(free_vertices.begin(), free_vertices.end(), next_vertex));
-//              seen_vertices.insert(next_vertex);
-//            }
-//          }
-          //============================================================================================================
           std::uniform_int_distribution<> dis(0, free_vertices.size() - 1);
           size_t vertex_idx = dis(g);
           uint_fast32_t vertex = free_vertices[vertex_idx];
@@ -341,13 +203,24 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
                 + cost_mat[vertex][mutated.genes[robot].path[i]]
                 - cost_mat[mutated.genes[robot].path[i - 1]][mutated.genes[robot].path[i]];
             double fit = rewards[vertex]; //TODO: Should we add the extras to the fit?
+            double extras = 0;
+
+            for (size_t j = 0; j < free_vertices.size(); ++j) {
+              double dist = cost_mat[vertex][free_vertices[j]];
+              if (dist < 2) {
+                extras += std::exp((log(0.01) / 2) * dist)
+                    * rewards[free_vertices[j]]; //TODO: This assumes a fixed sensor range. Change it to what Valerio did in the quadratic COP problem solved by Gurobi.
+              }
+            }
+            fit += extras;
             if (travel_increase != 0) {
               fit /= travel_increase;
             } else {
               fit = std::numeric_limits<double>::infinity();
             }
             if (fit > best_fitness) {
-              if (mutated.genes[robot].cost + travel_increase + 1 <= max_cost_v[robot]) {
+              double total_increase = mutated.genes[robot].cost + travel_increase + 1;
+              if (total_increase < max_cost_v[robot] || logically_equal(total_increase, max_cost_v[robot])) {
                 best_travel_increase = travel_increase;
                 best_fitness = fit;
                 ins_pos = i;
@@ -360,10 +233,8 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
             mutated.genes[robot].evaluate_gene(cost_mat, rewards, free_vertices);
             free_vertices.erase(free_vertices.begin() + vertex_idx);
           }
-          //============================================================================================================
         }
       } else {
-//        if (mutated.genes[robot].cost >= 0.95 * max_cost_v[robot]) {
         size_t to_remove = 0;
         double min_loss = std::numeric_limits<double>::infinity();
         for (size_t i = 1; i < mutated.genes[robot].path.size() - 1; ++i) {
@@ -375,7 +246,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
           double extras = 0;
           for (size_t j = 0; j < free_vertices.size(); ++j) {
             if (cost_mat[mutated.genes[robot].path[i]][free_vertices[j]] < 2) {
-              extras += std::exp(-2 * cost_mat[mutated.genes[robot].path[i]][free_vertices[j]]);
+              extras += std::exp((log(0.01) / 2) * cost_mat[mutated.genes[robot].path[i]][free_vertices[j]]);
             }
           }
           loss += extras;
@@ -386,7 +257,7 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
             loss = std::numeric_limits<double>::infinity();
           }
 
-          if (loss <= min_loss) {
+          if (loss < min_loss || logically_equal(loss, min_loss)) {
             min_loss = loss;
             to_remove = i;
           }
@@ -397,7 +268,6 @@ void Chromosome::mutate(Matrix<double> &cost_mat,
           mutated.genes[robot].calculate_cost(cost_mat);
           mutated.genes[robot].evaluate_gene(cost_mat, rewards, free_vertices);
         }
-//        }
       }
     }
   }
@@ -699,7 +569,8 @@ double_t Chromosome::GenerateNNGRASPPath(const Matrix<double_t> &cost_mat,
       uint_fast32_t next_vertex = available[std::distance(cdf.cbegin(), vertex_pos)];
       //==============================================================================================================
       double next_vertex_cost = cost_mat[path.back()][next_vertex] + 1;
-      if (path_cost + next_vertex_cost + cost_mat[next_vertex][end_vertex] <= max_cost) {
+      double next_vertex_end_cost = path_cost + next_vertex_cost + cost_mat[next_vertex][end_vertex];
+      if (next_vertex_end_cost < max_cost || logically_equal(next_vertex_end_cost, max_cost)) {
         path_cost += next_vertex_cost;
         path.push_back(next_vertex);
         free_vertices.erase(std::remove(free_vertices.begin(), free_vertices.end(), next_vertex));
@@ -712,6 +583,38 @@ double_t Chromosome::GenerateNNGRASPPath(const Matrix<double_t> &cost_mat,
     }
   }
   path.push_back(end_vertex);
+  return path_cost;
+}
+double_t Chromosome::GenerateRandomPath(const Matrix<double_t> &cost_mat,
+                                        const std::vector<double_t> &rewards,
+                                        const double_t &max_cost,
+                                        const uint_fast32_t &start_vertex,
+                                        const uint_fast32_t &end_vertex,
+                                        std::mt19937 &g,
+                                        Path &path) {
+  double_t path_cost = 0;
+  bool done = false;
+  path.push_back(start_vertex);
+  while (!done){
+    if (free_vertices.size() == 0){
+      path_cost += cost_mat[path.back()][end_vertex];
+      path.push_back(end_vertex);
+      done = true;
+    }
+    uint_fast32_t free_idx = g() % free_vertices.size();
+    uint_fast32_t to_insert = free_vertices[free_idx];
+    double min_cost_to_end = path_cost + cost_mat[path.back()][to_insert] + cost_mat[to_insert][end_vertex] + 1;
+    if (min_cost_to_end < max_cost || logically_equal(min_cost_to_end, max_cost)){
+      path_cost += cost_mat[path.back()][to_insert] + 1;
+      path.push_back(to_insert);
+      free_vertices.erase(free_vertices.begin() + free_idx);
+      seen_vertices.insert(to_insert);
+    } else {
+      path_cost += cost_mat[path.back()][end_vertex];
+      path.push_back(end_vertex);
+      done = true;
+    }
+  }
   return path_cost;
 }
 
@@ -736,14 +639,20 @@ Chromosome generate_chromosome(Matrix<double> &cost_mat,
       c.genes[i].cost =
           c.GenerateGRASPPath(cost_mat, rewards, max_cost_v[i], idx_start, idx_finish, g, c.genes[i].path);
     }
-  } else {
+  } else if(method == "RANDOM"){
+    for (int i = 0; i < n_agents; ++i) {
+      c.genes[i].cost =
+          c.GenerateRandomPath(cost_mat, rewards, max_cost_v[i], idx_start, idx_finish, g, c.genes[i].path);
+    }
+  }else {
     //method == GRASP2
-    c.GenerateGenes(cost_mat, rewards, max_cost_v, idx_start, idx_finish);
+    //c.GenerateGenes(cost_mat, rewards, max_cost_v, idx_start, idx_finish);
+    std::cerr << "UNKNOWN GENERATION METHOD USING RANDOM" << std::endl;
+    for (int i = 0; i < n_agents; ++i) {
+      c.genes[i].cost =
+          c.GenerateRandomPath(cost_mat, rewards, max_cost_v[i], idx_start, idx_finish, g, c.genes[i].path);
+    }
   }
-
-//  for (size_t i = 0; i < n_agents-1; ++i){
-//    mutual_two_opt(c.genes[i].path,c.genes[i+1].path, cost_mat, max_cost_v[i], max_cost_v[i+1]);
-//  }
   return c;
 }
 
@@ -961,8 +870,10 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
                    std::mt19937 &g,
                    size_t population_size = 100,
                    size_t n_generations = 50,
+                   double_t cx_rate = 0.5,
                    double_t mutation_rate = 0.75,
-                   std::string generation_method = std::string("GRASP")) {
+                   std::string generation_method = std::string("GRASP"),
+                   double_t elite_percent = 0.0) {
   /*
    * Initialise population
    * While gen < max_gen
@@ -1002,15 +913,28 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
     std::vector<Chromosome> new_pop;
     new_pop.reserve(pop_size);
 
-    for (uint_fast32_t i = 0; i < pop_size; ++i) {
+    uint_fast32_t num_elites = std::ceil(elite_percent*pop_size);
+
+    if(num_elites > 0){
+      auto sortRuleLambda = [] (const Chromosome& c1, const Chromosome& c2) -> bool
+      {
+        return c1.total_fitness < c2.total_fitness;
+      };
+      std::sort(pop.begin(), pop.end(), sortRuleLambda);
+      for (uint_fast32_t e = 0; e < num_elites; ++e){
+        new_pop.push_back(pop[e]);
+      }
+    }
+
+    for (uint_fast32_t i = 0; i < pop_size - num_elites; ++i) {
       new_pop.push_back(tournament_select(pop, tour_size, g));
     }
 
-    // Cx
-//    for (int i = 0; i < 20; ++i) {
-//      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2, g);
-//      cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost_v, rewards);
-//    }
+//     Cx
+    for (int i = 0; i < pop_size*cx_rate; ++i) {
+      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2, g);
+      cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost_v, rewards);
+    }
 
     // Mutate
     if (mutation_rate != 0) {
@@ -1054,70 +978,6 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
   }
   std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.total_fitness > c2.total_fitness; });
   best = pop[0];
-//  std::vector<uint_fast32_t> vertices(cost_mat.size());
-//  std::iota(vertices.begin(), vertices.end(), 0);
-//  std::vector<uint_fast32_t> free_vertices;
-//  std::unordered_set<uint_fast32_t> seen(best.genes[0].path.begin(), best.genes[0].path.end());
-//  for (uint_fast32_t robot = 1; robot < num_robots; ++robot) {
-//    for (uint_fast32_t vertex = 0; vertex < best.genes[robot].path.size(); ++vertex) {
-//      seen.insert(vertex);
-//    }
-//  }
-//  std::vector<uint_fast32_t> visited_vertices(seen.begin(), seen.end());
-//  std::sort(visited_vertices.begin(), visited_vertices.end());
-//  std::set_difference(vertices.begin(),
-//                      vertices.end(),
-//                      visited_vertices.begin(),
-//                      visited_vertices.end(),
-//                      std::back_inserter(free_vertices));
-//  for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
-//    for (size_t vertex_idx = 1; vertex_idx < best.genes[robot].path.size() - 2; ++vertex_idx) {
-//      std::vector<uint_fast32_t> available_vertices;
-//      for (uint_fast32_t fv:free_vertices) {
-//        if (cost_mat[best.genes[robot].path[vertex_idx]][fv] < 2) { //TODO: Fix the constant sensor distance
-//          available_vertices.push_back(fv);
-//        }
-//      }
-//
-//      double best_cost = best.genes[robot].cost;
-//      std::vector<uint_fast32_t> best_path = best.genes[robot].path;
-//      double best_fitness = best.genes[robot].fitness;
-//      uint_fast32_t best_vertex = best.genes[robot].path[vertex_idx];
-//
-//      for (uint_fast32_t i:available_vertices) {
-//        Gene tmp_c;
-//        tmp_c.path = best.genes[robot].path;
-//        tmp_c.cost = best.genes[robot].cost
-//            - cost_mat[best.genes[robot].path[vertex_idx - 1]][best.genes[robot].path[vertex_idx]]
-//            - cost_mat[best.genes[robot].path[vertex_idx]][best.genes[robot].path[vertex_idx + 1]]
-//            + cost_mat[best.genes[robot].path[vertex_idx - 1]][i]
-//            + cost_mat[i][best.genes[robot].path[vertex_idx + 1]];
-//        tmp_c.path.erase(tmp_c.path.begin() + vertex_idx);
-//        tmp_c.path.insert(tmp_c.path.begin() + vertex_idx, i);
-//        if (tmp_c.cost <= max_cost_v[robot]) {
-//          tmp_c.evaluate_gene(cost_mat, rewards, free_vertices);
-//          if (tmp_c.fitness > best_fitness) {
-//            best_fitness = tmp_c.fitness;
-//            best_cost = tmp_c.cost;
-//            best_path = tmp_c.path;
-//            best_vertex = i;
-//          }
-//        }
-//      }
-//      best.genes[robot].path = best_path;
-//      best.genes[robot].fitness = best_fitness;
-//      best.genes[robot].cost = best_cost;
-//      if (best_vertex != best.genes[robot].path[vertex_idx]) {
-//        free_vertices.push_back(best.genes[robot].path[vertex_idx]);
-//        free_vertices.erase(std::find(free_vertices.begin(), free_vertices.end(), best_vertex));
-//      }
-//    }
-//  }
-
-//  for (int j = 0; j < 100; ++j) {
-//    best.mutate(cost_mat, rewards, max_cost_v, g);
-//  }
-
   return best;
 }
 InsertMove::InsertMove(uint_fast32_t vertex,

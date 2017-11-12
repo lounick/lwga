@@ -63,11 +63,11 @@ int main(){
   rewards[82] = 0;
   uint_fast32_t num_robots = 3;
 //  std::vector<double> max_cost_v(num_robots, 4*((num_robots-1)+(82+81.0)/num_robots)/4);
-  std::vector<double> max_cost_v(num_robots, 4*((82+81.0)/num_robots)/4.0);
+  std::vector<double> max_cost_v(num_robots, 2*((82+81.0)/num_robots)/4.0);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 1000;
+  int nexp = 100;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -78,7 +78,7 @@ int main(){
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
 //    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 26, g);
-    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 1000, 0, 0, "NNGRASP");
+    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 200, 100, 0.0, 1.0, "RANDOM", 0.05);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
@@ -111,7 +111,7 @@ int main(){
         if (insert_ret.second) {
           for (size_t j = 0; j < free_vertices.size(); j++) {
             if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-              extras += std::exp(-2 * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+              extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
             }
           }
           fitness += rewards[c.genes[robot].path[i]] + extras;
@@ -119,7 +119,7 @@ int main(){
       }
     }
     c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
-    std::cout << c.total_fitness << " " << fitness << std::endl;
+    std::cout << exp << " " << c.total_fitness << " " << fitness << std::endl;
     fitnesses.push_back(fitness);
     if(fitness > best_fit){
           best = c;
@@ -145,7 +145,7 @@ int main(){
   std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
 
   std::cout << "best_fit: " << best_fit << " max_cost: " << max_cost_v[0] << std::endl;
-  for(size_t i = 0; i < num_robots; i++){std::cout << best.genes[i].cost << std::endl;}
+  for(size_t i = 0; i < num_robots; i++){std::cout << best.genes[i].cost << " "<< get_path_cost(best.genes[i].path, cost_mat) << std::endl;}
   std::cout << "[";
   for(size_t i = 0; i < num_robots; i++){
 //    std::cout << best.genes[i].cost << " [";

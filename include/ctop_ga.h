@@ -97,11 +97,23 @@ class Chromosome {
                                const uint_fast32_t &start_vertex,
                                const uint_fast32_t &end_vertex,
                                std::mt19937 &g, Path &path);
+  double_t GenerateRandomPath(const Matrix<double_t> &cost_mat,
+                              const std::vector<double_t> &rewards,
+                              const double_t &max_cost,
+                              const uint_fast32_t &start_vertex,
+                              const uint_fast32_t &end_vertex,
+                              std::mt19937 &g, Path &path);
   void GenerateGenes(Matrix<double_t> &cost_mat,
                      std::vector<double_t> &rewards,
                      std::vector<double_t> &max_cost_v,
                      const uint_fast32_t &start_vertex,
                      const uint_fast32_t &end_vertex);
+ private:
+  inline bool logically_equal(double a, double b, double error_factor = 1.0) {
+    return a == b ||
+        std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon() *
+            error_factor;
+  }
 };
 
 
@@ -140,7 +152,9 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
                    std::mt19937 &g,
                    size_t population_size,
                    size_t n_generations,
+                   double_t cx_rate,
                    double_t mutation_rate,
-                   std::string generation_method);
+                   std::string generation_method,
+                   double_t elite_percent);
 
 #endif //LWGA_CTOP_GA_H
