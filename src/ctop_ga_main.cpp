@@ -4,7 +4,7 @@
 
 #include "ctop_ga.h"
 
-int main(){
+int main() {
   std::vector<std::pair<double, double> > nodes;
   std::vector<std::vector<double> > cost_mat;
   /*
@@ -63,7 +63,8 @@ int main(){
   rewards[82] = 0;
   uint_fast32_t num_robots = 3;
 //  std::vector<double> max_cost_v(num_robots, 4*((num_robots-1)+(82+81.0)/num_robots)/4);
-  std::vector<double> max_cost_v(num_robots, 2*((82+81.0)/num_robots)/4.0);
+  std::vector<double>
+      max_cost_v(num_robots, 2 * ((82 + 81.0) / num_robots) / 4.0);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
@@ -78,14 +79,17 @@ int main(){
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
 //    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 26, g);
-    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 200, 100, 0.0, 1.0, "RANDOM", 0.05);
+    Chromosome c = ga_ctop(
+        cost_mat, rewards, max_cost_v, 0, 82, g, 250, 50, 3, 0.9, 0.1,
+        "RANDOM", 0.1);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
 
     std::unordered_set<uint_fast32_t> seen;
-    for(uint_fast32_t robot = 0; robot < num_robots; ++robot){
-      for(size_t path_idx = 0; path_idx < c.genes[robot].path.size(); ++path_idx){
+    for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
+      for (size_t path_idx = 0; path_idx < c.genes[robot].path.size();
+           ++path_idx) {
         seen.insert(c.genes[robot].path[path_idx]);
       }
     }
@@ -104,14 +108,15 @@ int main(){
 
     seen.clear();
     std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret;
-    for(uint_fast32_t robot = 0; robot < num_robots; ++robot) {
+    for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
       for (size_t i = 1; i < c.genes[robot].path.size() - 1; i++) {
         double extras = 0;
         insert_ret = seen.insert(c.genes[robot].path[i]);
         if (insert_ret.second) {
           for (size_t j = 0; j < free_vertices.size(); j++) {
             if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-              extras += std::exp((log(0.01) / 2) * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
+              extras += std::exp((log(0.01) / 2)
+                                     * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
             }
           }
           fitness += rewards[c.genes[robot].path[i]] + extras;
@@ -121,37 +126,46 @@ int main(){
     c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
     std::cout << exp << " " << c.total_fitness << " " << fitness << std::endl;
     fitnesses.push_back(fitness);
-    if(fitness > best_fit){
-          best = c;
-          best_fit = fitness;
+    if (fitness > best_fit) {
+      best = c;
+      best_fit = fitness;
     };
   }
-  double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
+  double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0)
+      / fitnesses.size();
   double fit_var;
-  for (int i = 0; i < fitnesses.size(); ++i){
-    fit_var += pow((fitnesses[i]-avg_fit),2);
+  for (int i = 0; i < fitnesses.size(); ++i) {
+    fit_var += pow((fitnesses[i] - avg_fit), 2);
   }
   fit_var /= fitnesses.size();
   double fit_stddev = sqrt(fit_var);
-  std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var << " StdDev: " << fit_stddev << std::endl;
+  std::cout << "Average fitness: " << avg_fit << " Variance: " << fit_var
+            << " StdDev: " << fit_stddev << std::endl;
 
-  double avg_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+  double avg_time =
+      std::accumulate(times.begin(), times.end(), 0.0) / times.size();
   double time_var;
-  for (int i = 0; i < times.size(); ++i){
-    time_var += pow((times[i]-avg_time),2);
+  for (int i = 0; i < times.size(); ++i) {
+    time_var += pow((times[i] - avg_time), 2);
   }
   time_var /= times.size();
   double time_stddev = sqrt(time_var);
-  std::cout << "Average time: " << avg_time << " Variance: " << time_var << " StdDev: " << time_stddev << std::endl;
+  std::cout << "Average time: " << avg_time << " Variance: " << time_var
+            << " StdDev: " << time_stddev << std::endl;
 
-  std::cout << "best_fit: " << best_fit << " max_cost: " << max_cost_v[0] << std::endl;
-  for(size_t i = 0; i < num_robots; i++){std::cout << best.genes[i].cost << " "<< get_path_cost(best.genes[i].path, cost_mat) << std::endl;}
+  std::cout << "best_fit: " << best_fit << " max_cost: " << max_cost_v[0]
+            << std::endl;
+  for (size_t i = 0; i < num_robots; i++) {
+    std::cout << best.genes[i].cost << " " << get_path_cost(best.genes[i].path,
+                                                            cost_mat)
+              << std::endl;
+  }
   std::cout << "[";
-  for(size_t i = 0; i < num_robots; i++){
+  for (size_t i = 0; i < num_robots; i++) {
 //    std::cout << best.genes[i].cost << " [";
     std::cout << " [";
-    for(size_t j = 0; j < best.genes[i].path.size(); j++){
-      if(j < best.genes[i].path.size() - 1)
+    for (size_t j = 0; j < best.genes[i].path.size(); j++) {
+      if (j < best.genes[i].path.size() - 1)
         std::cout << best.genes[i].path[j] << ", ";
       else {
         if (i < num_robots - 1) {

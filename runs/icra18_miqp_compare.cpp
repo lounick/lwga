@@ -95,7 +95,19 @@ int main(int argc, char *argv[]) {
       max_cost_v = std::vector<double_t>(nr, double_t(total_cost) / double_t(nr));
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 100, 50, 0.75, method);
+        Chromosome c = ga_ctop(cost_mat,
+                               rewards,
+                               max_cost_v,
+                               0,
+                               82,
+                               g,
+                               100,
+                               50,
+                               0,
+                               0.75,
+                               method,
+                               std::__cxx11::string(),
+                               0);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
         times.push_back(diff.count());
@@ -240,7 +252,19 @@ int main(int argc, char *argv[]) {
       max_cost_v = std::vector<double_t>(nr, ec * double_t(total_cost) / double_t(nr));
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, 100, 50, 0.75, method);
+        Chromosome c = ga_ctop(cost_mat,
+                               rewards,
+                               max_cost_v,
+                               0,
+                               82,
+                               g,
+                               100,
+                               50,
+                               0,
+                               0.75,
+                               method,
+                               std::__cxx11::string(),
+                               0);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
         times.push_back(diff.count());
@@ -383,7 +407,19 @@ int main(int argc, char *argv[]) {
       times.clear();
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, pop_size, 0, 0, method);
+        Chromosome c = ga_ctop(cost_mat,
+                               rewards,
+                               max_cost_v,
+                               0,
+                               82,
+                               g,
+                               pop_size,
+                               0,
+                               0,
+                               0,
+                               method,
+                               std::__cxx11::string(),
+                               0);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
         times.push_back(diff.count());
@@ -516,7 +552,19 @@ int main(int argc, char *argv[]) {
         times.clear();
         for (size_t i = 0; i < num_exp; ++i) {
           auto start = std::chrono::high_resolution_clock::now();
-          Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 82, g, pop_size, ngen, mut_rate, method);
+          Chromosome c = ga_ctop(cost_mat,
+                                 rewards,
+                                 max_cost_v,
+                                 0,
+                                 82,
+                                 g,
+                                 pop_size,
+                                 ngen,
+                                 0,
+                                 mut_rate,
+                                 method,
+                                 std::__cxx11::string(),
+                                 0);
           auto end = std::chrono::high_resolution_clock::now();
           std::chrono::duration<double> diff = end - start;
           times.push_back(diff.count());

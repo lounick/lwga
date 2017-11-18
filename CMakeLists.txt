@@ -28,6 +28,13 @@ set(CTOP_GA
         src/ctop_ga.cpp
         src/ctop_ga_main.cpp)
 
+set(CTOP_TUNING
+        ${GENERIC_FILES}
+        include/ctop_ga.h
+        include/tuning_instances.h
+        src/ctop_ga.cpp
+        src/crs_tuner.cpp)
+
 set(ICRA17_COP
         ${GENERIC_FILES}
         include/cop_ga.h
@@ -68,3 +75,6 @@ target_link_libraries(top_ga pthread)
 
 add_executable(icra18_ctop_miqp_compare ${ICRA18_CTOP_MIQP_COMPARE})
 target_link_libraries(icra18_ctop_miqp_compare pthread)
+
+add_executable(crs_tuner ${CTOP_TUNING})
+target_link_libraries(crs_tuner pthread)

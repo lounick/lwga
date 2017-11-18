@@ -461,11 +461,13 @@ void Chromosome::GenerateGenes(Matrix<double_t> &cost_mat,
   free_vertices = std::vector<uint_fast32_t>(free_list.begin(), free_list.end());
 }
 
-void Chromosome::insertGene(Gene &gene){
+void Chromosome::insertGene(Gene &gene) {
   Path::iterator path_it;
   genes.push_back(gene);
-  for (path_it = gene.path.begin(); path_it != gene.path.end(); ++path_it){
-    free_vertices.erase(std::find(free_vertices.begin(), free_vertices.end(), *path_it));
+  for (path_it = gene.path.begin(); path_it != gene.path.end(); ++path_it) {
+    std::vector<uint_fast32_t>::iterator del_pos = std::find(free_vertices.begin(), free_vertices.end(), *path_it);
+    if (del_pos != free_vertices.end())
+      free_vertices.erase(del_pos);
     seen_vertices.insert(*path_it);
   }
 }
@@ -627,19 +629,21 @@ double_t Chromosome::GenerateRandomPath(const Matrix<double_t> &cost_mat,
   return path_cost;
 }
 void Chromosome::removeCommonVertices(const Gene &gene) {
-  Path ::iterator path_it;
-  for (path_it = gene.path.begin() + 1; path_it != gene.path.end() - 1; ++path_it){
+  Path::const_iterator path_it;
+  for (path_it = gene.path.begin() + 1; path_it != gene.path.end() - 1; ++path_it) {
     std::vector<Gene>::iterator genes_it;
-    for (genes_it = genes.begin(); genes_it != genes.end(); ++genes_it){
-      genes_it->path.erase(std::find(genes_it->path.begin(), genes_it->path.end(), *path_it));
+    for (genes_it = genes.begin(); genes_it != genes.end(); ++genes_it) {
+      Path::iterator pos = std::find(genes_it->path.begin(), genes_it->path.end(), *path_it);
+      if (pos != genes_it->path.end())
+        genes_it->path.erase(std::find(genes_it->path.begin(), genes_it->path.end(), *path_it));
     }
   }
 }
 void Chromosome::evaluateGenes(const Matrix<double> &cost_mat,
-                               const std::vector<double> &rewards const,
+                               const std::vector<double> &rewards,
                                const std::vector<uint_fast32_t> free_vertices) {
   std::vector<Gene>::iterator genes_it;
-  for (genes_it = genes.begin(); genes_it != genes.end(); ++genes_it){
+  for (genes_it = genes.begin(); genes_it != genes.end(); ++genes_it) {
     genes_it->evaluate_gene(cost_mat, rewards, free_vertices);
   }
 }
@@ -788,10 +792,14 @@ void construct_offspring(Chromosome &offspring,
 
   Chromosome tmp_parent_1(parent1);
   Chromosome tmp_parent_2(parent2);
+  if (tmp_parent_1.genes.size() == 0 || tmp_parent_2.genes.size() == 0) {
+    std::cout << " one of the parents didn't have any genes" << std::endl;
+    exit(0);
+  }
   uint_fast32_t num_robots = max_cost_v.size();
-  std::uniform_real_distribution<> dis(0.0,1.0);
+  std::uniform_real_distribution<> dis(0.0, 1.0);
   auto sortRuleLambda = [](const Gene &g1, const Gene &g2) -> bool {
-    return g1.fitness < g2.fitness;
+    return g1.fitness > g2.fitness;
   };
 
   offspring.genes.clear();
@@ -800,33 +808,102 @@ void construct_offspring(Chromosome &offspring,
   offspring.seen_vertices.clear();
 
   // First construct
-  for (uint_fast32_t robot = 0; robot < num_robots; ++robot){
+  while (offspring.genes.size() < num_robots) {
     Gene to_insert;
-    if (dis(g) < 0.5){
+    if (dis(g) < 0.5) {
       // Choose best gene from parent 1.
       // Remove that gene from parent 1.
-      to_insert = tmp_parent_1.genes[0];
-      tmp_parent_1.genes.erase(tmp_parent_1.genes.begin());
-      // Insert gene to the offspring.
-      offspring.insertGene(to_insert);
-      // Remove vertices from genes of parent 2.
-      tmp_parent_2.removeCommonVertices(to_insert);
-      tmp_parent_2.evaluateGenes(cost_mat, rewards, offspring.free_vertices);
-      std::sort(tmp_parent_2.genes.begin(), tmp_parent_2.genes.end(), sortRuleLambda);
+      if (tmp_parent_1.genes.size() == 0) {
+        std::cout << tmp_parent_1.genes.size() << " " << tmp_parent_2.genes.size() << " " << offspring.genes.size()
+                  << " " << num_robots << std::endl;
+      } else {
+        to_insert = tmp_parent_1.genes[0];
+        tmp_parent_1.genes.erase(tmp_parent_1.genes.begin());
+        // Insert gene to the offspring.
+        offspring.insertGene(to_insert);
+        // Remove vertices from genes of parent 2.
+        tmp_parent_2.removeCommonVertices(to_insert);
+        tmp_parent_2.evaluateGenes(cost_mat, rewards, offspring.free_vertices);
+        std::sort(tmp_parent_2.genes.begin(), tmp_parent_2.genes.end(), sortRuleLambda);
+      }
     } else {
       // Choose best gene from parent 2.
       // Remove that gene from parent 2.
-      to_insert = tmp_parent_2.genes[0];
-      tmp_parent_2.genes.erase(tmp_parent_2.genes.begin());
-      // Remove these vertices from the free and insert them to the seen.
-      offspring.insertGene(to_insert);
-      // Remove vertices from genes of parent 2.
-      tmp_parent_1.removeCommonVertices(to_insert);
-      tmp_parent_1.evaluateGenes(cost_mat, rewards, offspring.free_vertices);
-      std::sort(tmp_parent_1.genes.begin(), tmp_parent_1.genes.end(), sortRuleLambda);
+      if (tmp_parent_2.genes.size() == 0) {
+        std::cout << tmp_parent_1.genes.size() << " " << tmp_parent_2.genes.size() << " " << offspring.genes.size()
+                  << " " << num_robots << std::endl;
+      } else {
+        to_insert = tmp_parent_2.genes[0];
+        tmp_parent_2.genes.erase(tmp_parent_2.genes.begin());
+        // Remove these vertices from the free and insert them to the seen.
+        offspring.insertGene(to_insert);
+        // Remove vertices from genes of parent 2.
+        tmp_parent_1.removeCommonVertices(to_insert);
+        tmp_parent_1.evaluateGenes(cost_mat, rewards, offspring.free_vertices);
+        std::sort(tmp_parent_1.genes.begin(), tmp_parent_1.genes.end(), sortRuleLambda);
+      }
     }
   }
   //TODO: Then check if you can improve the offspring genes by inserting free vertices.
+  offspring.evaluate_chromosome(cost_mat, rewards, max_cost_v);
+  std::sort(offspring.genes.begin(), offspring.genes.end(), sortRuleLambda);
+#if 0
+  std::vector<Gene>::iterator gene_it;
+  for (gene_it = offspring.genes.begin(); gene_it != offspring.genes.end(); ++gene_it) {
+    std::uniform_real_distribution<> greediness_dis(0, 1);
+    double_t greediness = greediness_dis(g);
+    std::vector<InsertMove> insert_candidates;
+    insert_candidates.reserve(offspring.free_vertices.size());
+    double_t min, max;
+    offspring.GenerateInsertMoves(cost_mat,
+                                  rewards,
+                                  max_cost_v[0],
+                                  gene_it->path,
+                                  gene_it->cost,
+                                  insert_candidates,
+                                  min,
+                                  max);
+
+    while (insert_candidates.size() > 0) {
+      double_t threshold = min + greediness * (max - min);
+      std::vector<uint_fast32_t> restricted_candidates_indexes;
+      restricted_candidates_indexes.reserve(insert_candidates.size());
+
+      for (size_t i = 0; i < insert_candidates.size(); ++i) {
+        if (insert_candidates[i].heuristic >= threshold) {
+          restricted_candidates_indexes.push_back(i);
+        }
+      }
+//    std::cout << "insert candidates: " << insert_candidates.size() << " RIC: " << restricted_candidates_indexes.size() << std::endl;
+      if (restricted_candidates_indexes.size() > 0) {
+        std::uniform_int_distribution<size_t> index_dis(0, restricted_candidates_indexes.size() - 1);
+        size_t idx = index_dis(g);
+        gene_it->path.insert(std::find(gene_it->path.begin(),
+                                       gene_it->path.end(),
+                                       insert_candidates[restricted_candidates_indexes[idx]].next_vertex),
+                             insert_candidates[restricted_candidates_indexes[idx]].vertex);
+        gene_it->cost += insert_candidates[restricted_candidates_indexes[idx]].cost_increase;
+        offspring.free_vertices.erase(std::find(offspring.free_vertices.begin(),
+                                                offspring.free_vertices.end(),
+                                                insert_candidates[restricted_candidates_indexes[idx]].vertex));
+      }
+      offspring.GenerateInsertMoves(cost_mat,
+                                    rewards,
+                                    max_cost_v[0],
+                                    gene_it->path,
+                                    gene_it->cost,
+                                    insert_candidates,
+                                    min,
+                                    max);
+    }
+  }
+  offspring.evaluate_chromosome(cost_mat, rewards, max_cost_v);
+  std::sort(offspring.genes.begin(), offspring.genes.end(), sortRuleLambda);
+#endif
+  if (offspring.genes.size() == 0) {
+    std::cout << "Offspring has no genes!" << std::endl;
+    exit(0);
+  }
 }
 
 void cx(Chromosome &c1,
@@ -838,7 +915,11 @@ void cx(Chromosome &c1,
   // CX As presented in "A new grouping genetic algorithm approach to the multiple traveling
   // salesperson problem" (or at least inspired by.
   auto sortRuleLambda = [](const Gene &g1, const Gene &g2) -> bool {
-    return g1.fitness < g2.fitness;
+    return g1.fitness > g2.fitness;
+  };
+
+  auto sortRuleLambdaCr = [](const Chromosome &c1, const Chromosome &c2) -> bool {
+    return c1.total_fitness > c2.total_fitness;
   };
 
   std::sort(c1.genes.begin(), c1.genes.end(), sortRuleLambda);
@@ -847,6 +928,10 @@ void cx(Chromosome &c1,
   Chromosome parent_2(c2);
   construct_offspring(c1, parent_1, parent_2, cost_mat, max_cost_v, rewards, g);
   construct_offspring(c2, parent_1, parent_2, cost_mat, max_cost_v, rewards, g);
+//  std::vector<Chromosome> family = {parent_1, parent_2, c1, c2};
+//  std::sort(family.begin(), family.end(), sortRuleLambdaCr);
+//  c1 = family[0];
+//  c2 = family[1];
 }
 
 void par_mutate(std::vector<size_t> indices,
@@ -861,18 +946,31 @@ void par_mutate(std::vector<size_t> indices,
     pop[idx].mutate(cost_mat, rewards, max_cost_v, g);
 }
 
+void par_cx(std::vector<size_t> indices,
+            std::vector<Chromosome> &pop,
+            Matrix<double> &cost_mat,
+            std::vector<double> &rewards,
+            std::vector<double> &max_cost_v) {
+  // Get hash of thread id for the seed of the generator.
+  std::hash<std::thread::id> hasher;
+  static thread_local std::mt19937 g(hasher(std::this_thread::get_id()));
+  for (size_t i = 0; i < indices.size(); i = i + 2)
+    cx(pop[indices[i]], pop[indices[i + 1]], cost_mat, max_cost_v, rewards, g);
+}
+
 Chromosome ga_ctop(Matrix<double> &cost_mat,
                    std::vector<double> &rewards,
                    std::vector<double> max_cost_v,
                    uint idx_start,
                    uint idx_finish,
                    std::mt19937 &g,
-                   size_t population_size = 100,
-                   size_t n_generations = 50,
-                   double_t cx_rate = 0.5,
-                   double_t mutation_rate = 0.75,
-                   std::string generation_method = std::string("GRASP"),
-                   double_t elite_percent = 0.0) {
+                   size_t population_size,
+                   size_t n_generations,
+                   uint8_t tour_size,
+                   double_t cx_rate,
+                   double_t mutation_rate,
+                   std::string generation_method,
+                   double_t elite_percent) {
   /*
    * Initialise population
    * While gen < max_gen
@@ -883,10 +981,10 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
   */
 
   uint_fast32_t pop_size = population_size;
-  int tour_size = 3;
   int max_gen = n_generations;
   uint_fast32_t num_robots = max_cost_v.size();
   Chromosome best;
+  uint8_t num_best = 0;
   if ((max_cost_v[0] - 2) <= cost_mat[idx_start][idx_finish]) {
     for (size_t i = 0; i < num_robots; ++i) {
       best.genes.push_back(Gene());
@@ -916,7 +1014,7 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
 
     if (num_elites > 0) {
       auto sortRuleLambda = [](const Chromosome &c1, const Chromosome &c2) -> bool {
-        return c1.total_fitness < c2.total_fitness;
+        return c1.total_fitness > c2.total_fitness;
       };
       std::sort(pop.begin(), pop.end(), sortRuleLambda);
       for (uint_fast32_t e = 0; e < num_elites; ++e) {
@@ -929,9 +1027,48 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
     }
 
 //     Cx
-    for (int i = 0; i < pop_size * cx_rate; ++i) {
-      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2, g);
-      cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost_v, rewards);
+//    int num_individuals = std::ceil(pop_size * cx_rate);
+//    if (num_individuals % 2)
+//      ++num_individuals;
+//    std::vector<size_t> indices = get_population_sample(new_pop.size(), num_individuals, g);
+//    for (int i = 0; i < indices.size(); i = i + 2) {
+//      cx(new_pop[indices[i]], new_pop[indices[i + 1]], cost_mat, max_cost_v, rewards, g);
+//    }
+    if (cx_rate != 0) {
+      int num_individuals = std::ceil(pop_size * cx_rate);
+      if (num_individuals % 2)
+        ++num_individuals;
+      std::vector<size_t> indices = get_population_sample(new_pop.size(), num_individuals, g);
+      uint_fast32_t M = 8; //number of cores
+      uint_fast32_t chunk_size = indices.size() / M;
+      if (chunk_size % 2)
+        --chunk_size;
+
+      std::vector<std::future<void> > future_v;
+      for (uint_fast32_t thread_count = 0; thread_count < M; ++thread_count) {
+        std::vector<size_t>
+            tmpv(indices.begin() + thread_count * chunk_size, indices.begin() + (thread_count + 1) * chunk_size);
+        future_v.push_back(std::async(std::launch::async,
+                                      par_cx,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(cost_mat),
+                                      std::ref(rewards),
+                                      std::ref(max_cost_v)));
+      }
+      if (indices.size() > chunk_size*M){
+        std::vector<size_t> tmpv(indices.begin() + (M) * chunk_size, indices.end());
+        future_v.push_back(std::async(std::launch::async,
+                                      par_cx,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(cost_mat),
+                                      std::ref(rewards),
+                                      std::ref(max_cost_v)));
+      }
+      for (auto &f: future_v) {
+        f.get();
+      }
     }
 
     // Mutate
@@ -973,6 +1110,16 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
     }
 
     pop = new_pop;
+//    std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.total_fitness > c2.total_fitness; });
+//    if(logically_equal(best.total_fitness, pop[0].total_fitness)){
+//      ++num_best;
+//    } else {
+//      best = pop[0];
+//      num_best = 0;
+//    }
+//    if(num_best >= 5){
+//      break;
+//    }
   }
   std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.total_fitness > c2.total_fitness; });
   best = pop[0];
@@ -1000,4 +1147,10 @@ Insertion::Insertion(uint_fast32_t vertex,
     : vertex(vertex), prev_vertex(prev_vertex), next_vertex(next_vertex), gene(gene), cost_increase(cost_increase),
       total_reward(total_reward), heuristic(heuristic) {
 
+}
+
+bool logically_equal(double a, double b, double error_factor) {
+  return a == b ||
+      std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon() *
+          error_factor;
 }

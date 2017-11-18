@@ -22,6 +22,8 @@
 #include "ga_types.h"
 #include "ga_utils.h"
 
+bool logically_equal(double a, double b, double error_factor = 1.0);
+
 class Gene {
  public:
   Path path;
@@ -77,7 +79,7 @@ class Chromosome {
   double total_fitness;
   void insertGene(Gene &gene);
   void removeCommonVertices(const Gene &gene);
-  void evaluateGenes(const Matrix<double> &cost_mat, const std::vector<double> &rewards const,
+  void evaluateGenes(const Matrix<double> &cost_mat, const std::vector<double> &rewards, const
                      std::vector<uint_fast32_t> free_vertices);
   void evaluate_chromosome(Matrix<double> &cost_mat,
                            std::vector<double> &rewards,
@@ -156,6 +158,12 @@ void par_mutate(std::vector<size_t> indices,
                 std::vector<double> &rewards,
                 std::vector<double> &max_cost_v);
 
+void par_cx(std::vector<size_t> indices,
+            std::vector<Chromosome> &pop,
+            Matrix<double> &cost_mat,
+            std::vector<double> &rewards,
+            std::vector<double> &max_cost_v);
+
 Chromosome ga_ctop(Matrix<double> &cost_mat,
                    std::vector<double> &rewards,
                    std::vector<double> max_cost_v,
@@ -164,6 +172,7 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
                    std::mt19937 &g,
                    size_t population_size,
                    size_t n_generations,
+                   uint8_t tour_size,
                    double_t cx_rate,
                    double_t mutation_rate,
                    std::string generation_method,
