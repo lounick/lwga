@@ -64,7 +64,7 @@ int main() {
   uint_fast32_t num_robots = 3;
 //  std::vector<double> max_cost_v(num_robots, 4*((num_robots-1)+(82+81.0)/num_robots)/4);
   std::vector<double>
-      max_cost_v(num_robots, 2 * ((82 + 81.0) / num_robots) / 4.0);
+      max_cost_v(num_robots, 3 * ((82 + 81.0) / num_robots) / 4.0);
   std::vector<double> fitnesses;
   std::vector<double> times;
 
@@ -85,6 +85,8 @@ int main() {
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
+
+    c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
 
     std::unordered_set<uint_fast32_t> seen;
     for (uint_fast32_t robot = 0; robot < num_robots; ++robot) {
@@ -123,7 +125,6 @@ int main() {
         }
       }
     }
-    c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
     std::cout << exp << " " << c.total_fitness << " " << fitness << std::endl;
     fitnesses.push_back(fitness);
     if (fitness > best_fit) {

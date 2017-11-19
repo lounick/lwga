@@ -44,12 +44,12 @@ set(ICRA17_COP
 set(PATH_RELINKING
         include/path_relinking.h)
 
-set(TOP_GA
-        ${GENERIC_FILES}
-        include/top_ga.h
-        src/top_ga_main.cpp
-        src/top_ga.cpp
-        src/ga_utils.cpp)
+#set(TOP_GA
+#        ${GENERIC_FILES}
+#        include/top_ga.h
+#        src/top_ga_main.cpp
+#        src/top_ga.cpp
+#        src/ga_utils.cpp)
 
 set(ICRA18_CTOP_MIQP_COMPARE
         ${GENERIC_FILES}
@@ -70,8 +70,8 @@ target_link_libraries(ctop-ga pthread)
 add_executable(icra17-cop ${ICRA17_COP})
 target_link_libraries(icra17-cop pthread)
 
-add_executable(top_ga ${TOP_GA})
-target_link_libraries(top_ga pthread)
+#add_executable(top_ga ${TOP_GA})
+#target_link_libraries(top_ga pthread)
 
 add_executable(icra18_ctop_miqp_compare ${ICRA18_CTOP_MIQP_COMPARE})
 target_link_libraries(icra18_ctop_miqp_compare pthread)
