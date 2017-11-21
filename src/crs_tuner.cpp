@@ -300,6 +300,34 @@ Configurations generatePopulation(uint_fast8_t pop_size,
                                   Limits<double_t> elitist_rate_lim,
                                   double_t rating_interval,
                                   std::mt19937 &g) {
+  std::vector<uint_fast16_t> pop_classes;
+  pop_classes.reserve(10);
+  uint_fast16_t pop_chunk = (pop_size_lim.max - pop_size_lim.min)/9;
+  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+    pop_classes.push_back(pop_size_lim.min + cnt * pop_chunk);
+  }
+  std::vector<uint8_t> num_gen_classes;
+  num_gen_classes.reserve(10);
+  uint8_t num_gen_chunk = (num_generations_lim.max - num_generations_lim.min)/9;
+  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+    num_gen_classes.push_back(num_generations_lim.min + cnt * num_gen_chunk);
+  }
+  std::vector<double_t> cx_classes;
+  cx_classes.reserve(11);
+  double_t cx_chunk = (cx_rate_lim.max - cx_rate_lim.min)/9.0;
+  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+    cx_classes.push_back(cx_rate_lim.min + cnt * cx_chunk);
+  }
+  std::vector<double_t> mut_classes;
+  mut_classes.reserve(11);
+  double_t mut_chunk = (mut_rate_lim.max - mut_rate_lim.min)/9.0;
+  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+    mut_classes.push_back(mut_rate_lim.min + cnt * mut_chunk);
+  }
+
+  std::uniform_int_distribution<size_t> dis10(0,9);
+  std::uniform_int_distribution<size_t> dis11(0,10);
+
   std::uniform_int_distribution<uint_fast16_t>
       pop_size_dis(pop_size_lim.min, pop_size_lim.max);
   std::uniform_int_distribution<uint_fast8_t>
@@ -316,11 +344,11 @@ Configurations generatePopulation(uint_fast8_t pop_size,
   Configurations pop;
   pop.reserve(pop_size);
   for (uint_fast8_t i = 0; i < pop_size; ++i) {
-    pop.emplace_back(pop_size_dis(g),
-                     num_generations_dis(g),
+    pop.emplace_back(pop_classes[dis10(g)],
+                     num_gen_classes[dis10(g)],
                      tour_size_dis(g),
-                     cx_rate_dis(g),
-                     mut_rate_dis(g),
+                     cx_classes[dis10(g)],
+                     mut_classes[dis10(g)],
                      elitist_rate_dis(g),
                      rating_interval,
                      pop_size_lim,
@@ -533,11 +561,11 @@ void cx(
 }
 
 void mut(Configuration &c, double_t mut_prob, std::mt19937 &g) {
-  uint8_t pop_change = 50;
-  uint8_t gen_change = 15;
+  uint8_t pop_change = 25;
+  uint8_t gen_change = 5;
   uint8_t tour_change = 1;
-  double_t cx_change = 0.05;
-  double_t mut_change = 0.05;
+  double_t cx_change = 0.1;
+  double_t mut_change = 0.1;
   double_t elite_change = 0.01;
   std::uniform_real_distribution<double_t> prob(0.0, 1.0);
   if (prob(g) < mut_prob) {
@@ -579,12 +607,12 @@ void mut(Configuration &c, double_t mut_prob, std::mt19937 &g) {
 }
 
 int main(int argc, char *argv[]) {
-  uint_fast8_t pop_size = 4;
-  Limits<uint_fast16_t> pop_size_lim = {10, 1000};
-  Limits<uint_fast8_t> num_gen_lim = {5, 250};
+  uint_fast8_t pop_size = 100;
+  Limits<uint_fast16_t> pop_size_lim = {25, 250};
+  Limits<uint_fast8_t> num_gen_lim = {5, 50};
   Limits<uint_fast8_t> tour_size_lim = {3, 10};
-  Limits<double_t> cx_lim = {0.0, 1.0};
-  Limits<double_t> mut_lim = {0.0, 1.0};
+  Limits<double_t> cx_lim = {0.0, 0.9};
+  Limits<double_t> mut_lim = {0.0, 0.9};
   Limits<double_t> elites_lim = {0.01, 0.2};
   double_t rating_interval = 2.0;
   double_t cx_prob = 0.5;
@@ -596,12 +624,13 @@ int main(int argc, char *argv[]) {
       pop_size, pop_size_lim, num_gen_lim, tour_size_lim, cx_lim, mut_lim,
       elites_lim, rating_interval, g);
   Problems P = generateProblems();
-  uint8_t max_exp = 1;//10;
-  uint8_t max_runs = 1;//25;
+  uint8_t max_exp = 10;//10;
+  uint8_t max_runs = 25;//25;
   double_t MPS = pop_size / 2;
   for (uint8_t exp = 0; exp < max_exp; ++exp) {
     for (size_t config = 0; config < C.size(); ++config) {
       C[config].initResults(P.size(), max_runs);
+      std::cout << "Configuration: [" << unsigned(C[config].num_gen()) << ", " << unsigned(C[config].pop_size()) << ", " << unsigned(C[config].tour_size()) << ", " << C[config].cx_rate() << ", " << C[config].mut_rate() << ", " << C[config].elitist_rate() << "]" << std::endl;
       for (size_t prob = 0; prob < P.size(); ++prob) {
         for (uint8_t run = 0; run < max_runs; ++run) {
           std::cout << "Running configuration " << std::setfill('0')
@@ -689,11 +718,17 @@ int main(int argc, char *argv[]) {
           return c1.rating() > c2.rating();
         };
     std::sort(C.begin(), C.end(), sortRuleLambda);
+    for(Configurations::iterator it = C.begin(); it != C.end(); ++it){
+      std::cout << it->rating() << " " << it->getRatingInterval().min << " " << it->getRatingInterval().max << std::endl;
+    }
     Configurations parents;
     Configurations newC;
     parents.reserve(C.size());
     newC.reserve(C.size());
-    parents.push_back(*C.begin());
+//    parents.push_back(*C.begin());
+    for(Configurations::iterator it = C.begin(); it != C.begin()+10; ++it){
+      parents.push_back(*it);
+    }
     Limits<double_t> best_interval = parents.front().getRatingInterval();
     for (Configurations::iterator it = C.begin() + 1; it != C.end(); ++it) {
       if (!(best_interval.min > it->getRatingInterval().max ||
@@ -722,8 +757,8 @@ int main(int argc, char *argv[]) {
   std::cout << "Config\t" << "Rating\t" << "Pop. Size\t" << "Num. Generations\t" << "Tour size\t" << "CX%\t" << "MUT%\t" << "Elite%\t" << std::endl;
   for (size_t config = 0; config < C.size(); ++config) {
     std::cout << std::setfill('0') << std::setw(3) << config << "\t"
-              << C[config].rating() << "\t" << C[config].pop_size() << "\t"
-              << C[config].num_gen() << "\t" << C[config].tour_size() << "\t"
+              << C[config].rating() << "\t" << unsigned(C[config].pop_size()) << "\t"
+              << unsigned(C[config].num_gen()) << "\t" << unsigned(C[config].tour_size()) << "\t"
               << C[config].cx_rate() << "\t" << C[config].mut_rate() << "\t"
               << C[config].elitist_rate() << "\t" << std::endl;
 //    char comma[3] = {'\0', ' ', '\0'};
@@ -741,10 +776,3 @@ int main(int argc, char *argv[]) {
   }
   return 0;
 }
-
-uint_fast16_t pop_size_;
-uint_fast8_t num_gen_;
-uint_fast8_t tour_size_;
-double_t cx_rate_;
-double_t mut_rate_;
-double_t elitist_rate_;
