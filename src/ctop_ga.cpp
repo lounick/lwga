@@ -1003,8 +1003,9 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
     c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
     pop.push_back(c);
   }
-
-  for (int gen = 0; gen < max_gen; ++gen) {
+  uint8_t num_stable = 0;
+  uint8_t max_stable = 10;
+  for (int gen = 0; gen < max_gen && num_stable < max_stable; ++gen) {
     // Select new population
 //    std::cout << "Calculating generation " << gen << std::endl;
     std::vector<Chromosome> new_pop;
@@ -1021,7 +1022,10 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
         new_pop.push_back(pop[e]);
       }
     }
-
+    if (logically_equal(best.total_fitness, new_pop.front().total_fitness))
+      ++num_stable;
+    else
+      best = new_pop.front();
     for (uint_fast32_t i = 0; i < pop_size - num_elites; ++i) {
       new_pop.push_back(tournament_select(pop, tour_size, g));
     }
@@ -1122,7 +1126,8 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
 //    }
   }
   std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.total_fitness > c2.total_fitness; });
-  best = pop[0];
+  if(best.total_fitness < pop[0].total_fitness)
+    best = pop[0];
   return best;
 }
 

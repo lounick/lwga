@@ -145,9 +145,17 @@ class Configuration {
     else
       elitist_rate_ = elitist_rate;
   }
-  inline double_t results(size_t row, size_t col) const { return results_[row][col]; }
+  inline double_t results(size_t row, size_t col) const {
+    return results_[row][col];
+  }
   inline void results(size_t row, size_t col, double_t val) {
     results_[row][col] = val;
+  }
+  inline double_t time_results(size_t row, size_t col) const {
+    return time_results_[row][col];
+  }
+  inline void time_results(size_t row, size_t col, double_t val) {
+    time_results_[row][col] = val;
   }
   void initResults(size_t num_rows, size_t num_cols) {
     results_.clear();
@@ -155,6 +163,12 @@ class Configuration {
     for (size_t row = 0; row < num_rows; ++row) {
       results_.push_back(std::move(std::vector<double_t>(num_cols, 0)));
     }
+    time_results_.clear();
+    time_results_.reserve(num_rows);
+    for (size_t row = 0; row < num_rows; ++row) {
+      time_results_.push_back(std::move(std::vector<double_t>(num_cols, 0)));
+    }
+
   }
   void initGames(size_t num_games) {
     games_.clear();
@@ -272,6 +286,7 @@ class Configuration {
   double_t mut_rate_;
   double_t elitist_rate_;
   Matrix<double_t> results_;
+  Matrix<double_t> time_results_;
   Games games_;
   Limits<uint_fast16_t> pop_size_lim_;
   Limits<uint_fast8_t> num_gen_lim_;
@@ -325,8 +340,16 @@ Configurations generatePopulation(uint_fast8_t pop_size,
     mut_classes.push_back(mut_rate_lim.min + cnt * mut_chunk);
   }
 
+  std::vector<double_t> elite_classes;
+  elite_classes.reserve(20);
+  double_t elite_chunk = (elitist_rate_lim.max - elitist_rate_lim.min)/19.0;
+  for (uint8_t cnt = 0; cnt < 20; ++cnt){
+    elite_classes.push_back(elitist_rate_lim.min + cnt * elite_chunk);
+  }
+
   std::uniform_int_distribution<size_t> dis10(0,9);
   std::uniform_int_distribution<size_t> dis11(0,10);
+  std::uniform_int_distribution<size_t> dis20(0,19);
 
   std::uniform_int_distribution<uint_fast16_t>
       pop_size_dis(pop_size_lim.min, pop_size_lim.max);
@@ -349,7 +372,7 @@ Configurations generatePopulation(uint_fast8_t pop_size,
                      tour_size_dis(g),
                      cx_classes[dis10(g)],
                      mut_classes[dis10(g)],
-                     elitist_rate_dis(g),
+                     elite_classes[dis20(g)],
                      rating_interval,
                      pop_size_lim,
                      num_generations_lim,
@@ -372,7 +395,7 @@ Problems generateProblems() {
   std::vector<double_t> rewards9x9(canonical9_costmat.size(), 1);
   rewards9x9.front() = 0;
   rewards9x9.back() = 0;
-  /*Problem prob5x5canonical3robs = {
+  Problem prob5x5canonical3robs = {
       canonical5_costmat, rewards5x5,
       std::vector<double>(3, 3 * ((canonical5_objective + 25.0) / 3) / 4.0)};
   Problem prob5x5random3robs = {
@@ -384,30 +407,30 @@ Problems generateProblems() {
   Problem prob5x5random4robs = {
       random5_cost_mat, rewards5x5,
       std::vector<double>(4, 3 * ((random5_objective + 25.0) / 4) / 4.0)};
-  Problem prob5x5canonical5robs = {
+  /*Problem prob5x5canonical5robs = {
       canonical5_costmat, rewards5x5,
       std::vector<double>(5, 3 * ((canonical5_objective + 25.0) / 5) / 4.0)};
   Problem prob5x5random5robs = {
       random5_cost_mat, rewards5x5,
-      std::vector<double>(5, 3 * ((random5_objective + 25.0) / 5) / 4.0)};
+      std::vector<double>(5, 3 * ((random5_objective + 25.0) / 5) / 4.0)};*/
   probs.push_back(std::move(prob5x5canonical3robs));
   probs.push_back(std::move(prob5x5random3robs));
   probs.push_back(std::move(prob5x5canonical4robs));
   probs.push_back(std::move(prob5x5random4robs));
-  probs.push_back(std::move(prob5x5canonical5robs));
-  probs.push_back(std::move(prob5x5random5robs));
+  /*probs.push_back(std::move(prob5x5canonical5robs));
+  probs.push_back(std::move(prob5x5random5robs));*/
   Problem prob7x7canonical3robs = {
       canonical7_costmat, rewards7x7,
       std::vector<double>(3, 3 * ((canonical7_objective + 49.0) / 3) / 4.0)};
   Problem prob7x7random3robs = {
       random7_cost_mat, rewards7x7,
       std::vector<double>(3, 3 * ((random7_objective + 49.0) / 3) / 4.0)};
-  Problem prob7x7canonical4robs = {
+  /*Problem prob7x7canonical4robs = {
       canonical7_costmat, rewards7x7,
       std::vector<double>(4, 3 * ((canonical7_objective + 49.0) / 4) / 4.0)};
   Problem prob7x7random4robs = {
       random7_cost_mat, rewards7x7,
-      std::vector<double>(4, 3 * ((random7_objective + 49.0) / 4) / 4.0)};
+      std::vector<double>(4, 3 * ((random7_objective + 49.0) / 4) / 4.0)};*/
   Problem prob7x7canonical5robs = {
       canonical7_costmat, rewards7x7,
       std::vector<double>(5, 3 * ((canonical7_objective + 49.0) / 5) / 4.0)};
@@ -416,22 +439,22 @@ Problems generateProblems() {
       std::vector<double>(5, 3 * ((random7_objective + 49.0) / 5) / 4.0)};
   probs.push_back(std::move(prob7x7canonical3robs));
   probs.push_back(std::move(prob7x7random3robs));
-  probs.push_back(std::move(prob7x7canonical4robs));
-  probs.push_back(std::move(prob7x7random4robs));
+  //probs.push_back(std::move(prob7x7canonical4robs));
+  //probs.push_back(std::move(prob7x7random4robs));
   probs.push_back(std::move(prob7x7canonical5robs));
-  probs.push_back(std::move(prob7x7random5robs));*/
+  probs.push_back(std::move(prob7x7random5robs));
   Problem prob9x9canonical3robs = {
       canonical9_costmat, rewards9x9,
       std::vector<double>(3, 3 * ((canonical9_objective + 81.0) / 3) / 4.0)};
   Problem prob9x9random3robs = {
       random9_cost_mat, rewards9x9,
       std::vector<double>(3, 3 * ((random9_objective + 81.0) / 3) / 4.0)};
-  Problem prob9x9canonical4robs = {
+  /*Problem prob9x9canonical4robs = {
       canonical9_costmat, rewards9x9,
       std::vector<double>(4, 3 * ((canonical9_objective + 81.0) / 4) / 4.0)};
   Problem prob9x9random4robs = {
       random9_cost_mat, rewards9x9,
-      std::vector<double>(4, 3 * ((random9_objective + 81.0) / 4) / 4.0)};
+      std::vector<double>(4, 3 * ((random9_objective + 81.0) / 4) / 4.0)};*/
   Problem prob9x9canonical5robs = {
       canonical9_costmat, rewards9x9,
       std::vector<double>(5, 3 * ((canonical9_objective + 81.0) / 5) / 4.0)};
@@ -440,8 +463,8 @@ Problems generateProblems() {
       std::vector<double>(5, 3 * ((random9_objective + 81.0) / 5) / 4.0)};
   probs.push_back(std::move(prob9x9canonical3robs));
   probs.push_back(std::move(prob9x9random3robs));
-  probs.push_back(std::move(prob9x9canonical4robs));
-  probs.push_back(std::move(prob9x9random4robs));
+  //probs.push_back(std::move(prob9x9canonical4robs));
+  //probs.push_back(std::move(prob9x9random4robs));
   probs.push_back(std::move(prob9x9canonical5robs));
   probs.push_back(std::move(prob9x9random5robs));
   return probs;
@@ -625,30 +648,39 @@ int main(int argc, char *argv[]) {
       elites_lim, rating_interval, g);
   Problems P = generateProblems();
   uint8_t max_exp = 10;//10;
-  uint8_t max_runs = 25;//25;
+  uint8_t max_runs = 10;//25;
   double_t MPS = pop_size / 2;
   for (uint8_t exp = 0; exp < max_exp; ++exp) {
     for (size_t config = 0; config < C.size(); ++config) {
       C[config].initResults(P.size(), max_runs);
-      std::cout << "Configuration: [" << unsigned(C[config].num_gen()) << ", " << unsigned(C[config].pop_size()) << ", " << unsigned(C[config].tour_size()) << ", " << C[config].cx_rate() << ", " << C[config].mut_rate() << ", " << C[config].elitist_rate() << "]" << std::endl;
+      std::cout << "Configuration["<< std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+                << unsigned(C[config].pop_size()) << ", "
+                << unsigned(C[config].tour_size()) << ", "
+                << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+                << C[config].elitist_rate() << "]" << std::endl;
       for (size_t prob = 0; prob < P.size(); ++prob) {
         for (uint8_t run = 0; run < max_runs; ++run) {
-          std::cout << "Running configuration " << std::setfill('0')
-                    << std::setw(3) << config << ", problem "
-                    << std::setfill('0') << std::setw(3) << prob
-                    << ", run " << std::setfill('0') << std::setw(3)
-                    << unsigned(run) << std::endl;
+//          std::cout << "Running configuration " << std::setfill('0')
+//                    << std::setw(3) << config << ", problem "
+//                    << std::setfill('0') << std::setw(3) << prob
+//                    << ", run " << std::setfill('0') << std::setw(3)
+//                    << unsigned(run) << std::endl;
           Chromosome c;
           double_t result;
+          auto start = std::chrono::high_resolution_clock::now();
           c = ga_ctop(
               P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
               0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
               C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),
               C[config].mut_rate(), "RANDOM", C[config].elitist_rate()
           );
+          auto end = std::chrono::high_resolution_clock::now();
+          std::chrono::duration<double> diff = end - start;
           result = evaluateChromosome(
               c, P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v);
           C[config].results(prob, run, result);
+          C[config].time_results(prob, run, diff.count());
         }
       }
     }
@@ -688,17 +720,40 @@ int main(int argc, char *argv[]) {
           p_results_1.reserve(max_runs);
           p_results_2.reserve(max_runs);
           for (uint8_t run = 0; run < max_runs; ++run) {
-            if (logically_equal(
-                C[config1].results(prob, run), C[config2].results(prob, run))) {
+            double_t p1_res = C[config1].results(prob, run);
+            double_t p2_res = C[config2].results(prob, run);
+            double_t p1_time = C[config1].time_results(prob, run);
+            double_t p2_time = C[config2].time_results(prob, run);
+            double_t timediff = p1_time - p2_time;
+
+//            if(timediff < 0) {
+//              p1_res = p1_res + 0.05 * p1_res;
+//              p2_res = p2_res - 0.05 * p2_res;
+//            }
+//            else {
+//              p1_res = p1_res - 0.05 * p1_res;
+//              p2_res = p2_res + 0.05 * p2_res;
+//            }
+
+            if (logically_equal(p1_res, p2_res)) {
               p_results_1.push_back(0.5);
               p_results_2.push_back(0.5);
-            } else if (
-                C[config1].results(prob, run) < C[config2].results(prob, run)) {
+            } else if (p1_res < p2_res) {
               p_results_1.push_back(0.0);
               p_results_2.push_back(1.0);
             } else {
               p_results_1.push_back(1.0);
               p_results_2.push_back(0.0);
+            }
+            if (logically_equal(p1_time, p2_time)) {
+              p_results_1.back() += 0.0;
+              p_results_2.back() += 0.0;
+            } else if (p1_time < p2_res) {
+              p_results_1.back() += 0.1;
+              p_results_2.back() += -0.1;
+            } else {
+              p_results_2.back() += 0.1;
+              p_results_1.back() += -0.1;
             }
           }
           g1.results.push_back(std::move(p_results_1));
