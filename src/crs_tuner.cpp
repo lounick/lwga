@@ -316,9 +316,9 @@ Configurations generatePopulation(uint_fast8_t pop_size,
                                   double_t rating_interval,
                                   std::mt19937 &g) {
   std::vector<uint_fast16_t> pop_classes;
-  pop_classes.reserve(10);
-  uint_fast16_t pop_chunk = (pop_size_lim.max - pop_size_lim.min)/9;
-  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+  pop_classes.reserve(20);
+  uint_fast16_t pop_chunk = (pop_size_lim.max - pop_size_lim.min)/19;
+  for(uint8_t cnt = 0; cnt < 20; ++cnt){
     pop_classes.push_back(pop_size_lim.min + cnt * pop_chunk);
   }
   std::vector<uint8_t> num_gen_classes;
@@ -367,7 +367,7 @@ Configurations generatePopulation(uint_fast8_t pop_size,
   Configurations pop;
   pop.reserve(pop_size);
   for (uint_fast8_t i = 0; i < pop_size; ++i) {
-    pop.emplace_back(pop_classes[dis10(g)],
+    pop.emplace_back(pop_classes[dis20(g)],
                      num_gen_classes[dis10(g)],
                      tour_size_dis(g),
                      cx_classes[dis10(g)],
@@ -631,7 +631,7 @@ void mut(Configuration &c, double_t mut_prob, std::mt19937 &g) {
 
 int main(int argc, char *argv[]) {
   uint_fast8_t pop_size = 100;
-  Limits<uint_fast16_t> pop_size_lim = {25, 250};
+  Limits<uint_fast16_t> pop_size_lim = {25, 500};
   Limits<uint_fast8_t> num_gen_lim = {5, 50};
   Limits<uint_fast8_t> tour_size_lim = {3, 10};
   Limits<double_t> cx_lim = {0.0, 0.9};
@@ -673,7 +673,7 @@ int main(int argc, char *argv[]) {
               P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
               0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
               C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),
-              C[config].mut_rate(), "RANDOM", C[config].elitist_rate()
+              C[config].mut_rate(), "NNGRASP", C[config].elitist_rate()
           );
           auto end = std::chrono::high_resolution_clock::now();
           std::chrono::duration<double> diff = end - start;
@@ -791,7 +791,14 @@ int main(int argc, char *argv[]) {
         parents.push_back(*it);
       }
     }
-
+    for(size_t config = 0; config < 10; ++config) {
+      std::cout << "Parent["<< std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(parents[config].num_gen()) << ", "
+                << unsigned(parents[config].pop_size()) << ", "
+                << unsigned(parents[config].tour_size()) << ", "
+                << parents[config].cx_rate() << ", " << parents[config].mut_rate() << ", "
+                << parents[config].elitist_rate() << "]" << std::endl;
+    }
     newC = parents;
     while (newC.size() < pop_size) {
       std::vector<size_t> parent_indices;
@@ -802,6 +809,14 @@ int main(int argc, char *argv[]) {
       newC.push_back(std::move(child));
     }
     C = newC;
+    for(size_t config = 0; config < 10; ++config) {
+      std::cout << "Config["<< std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+	        << unsigned(C[config].pop_size()) << ", "
+	        << unsigned(C[config].tour_size()) << ", "
+	        << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+	        << C[config].elitist_rate() << "]" << std::endl;
+    }
     std::cout << "Generated new population" << std::endl;
   }
   auto sortRuleLambda =
