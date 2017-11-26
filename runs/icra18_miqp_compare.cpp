@@ -22,7 +22,21 @@ int main(int argc, char *argv[]) {
   std::random_device rd;
   std::mt19937 g(rd());
 
-  int num_exp = 10;
+  struct Configuration{
+    uint16_t pop_size;
+    uint8_t num_gen;
+    uint8_t tour_size;
+    double_t cx_rate;
+    double_t mut_rate;
+    std::string method;
+    double_t elite_rate;
+  };
+
+  std::vector<Configuration> C;
+  C = {{300, 40, 6, 0.6, 0.6, std::string("RANDOM"), 0.19},
+       {250, 50, 5, 0.9, 0.7, std::string("NNGRASP"), 0.03}};
+
+  int num_exp = 1000;
   double_t total_cost = 81.0 + 82.0;
 
   std::ofstream util_file;
@@ -60,10 +74,10 @@ int main(int argc, char *argv[]) {
   rewards[82] = 0;
 
 
-  grasp_methods = {std::string("GRASP"), std::string("NNGRASP"), std::string("RANDOM")};
+  grasp_methods = {std::string("NNGRASP"), std::string("RANDOM")};
 
   num_robots = {2, 3, 4, 5, 6};
-  util_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_miqp_comparisson_util.txt");
+  /*util_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_miqp_comparisson_util.txt");
   time_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_miqp_comparisson_time.txt");
   util_file << "\\begin{table}[]\n";
   util_file << "\\centering\n";
@@ -83,8 +97,8 @@ int main(int argc, char *argv[]) {
   time_file << "\\hline \\hline\n";
   time_file << "\\multirow{2}{*}{Algorithm} & \\multicolumn{5}{c}{Number of Robots} \\Tstrut \\\\\n";
   time_file << "& 2 & 3 & 4 & 5 &6 \\Bstrut \\\\ \\hline\n";
-  time_file << "COP 5\\% & & & & & \\Tstrut \\\\\n";
-  for (auto &method : grasp_methods) {
+  time_file << "COP 5\\% & & & & & \\Tstrut \\\\\n";*/
+  /*for (auto &config : C) {
     mean_fitnesses.clear();
     stddev_fitnesses.clear();
     mean_times.clear();
@@ -95,19 +109,10 @@ int main(int argc, char *argv[]) {
       max_cost_v = std::vector<double_t>(nr, double_t(total_cost) / double_t(nr));
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(cost_mat,
-                               rewards,
-                               max_cost_v,
-                               0,
-                               82,
-                               g,
-                               100,
-                               50,
-                               0,
-                               0.75,
-                               method,
-                               std::__cxx11::string(),
-                               0);
+        Chromosome c = ga_ctop(
+            cost_mat, rewards, max_cost_v, 0, 82, g, config.pop_size,
+            config.num_gen, config.tour_size, config.cx_rate, config.mut_rate,
+            config.method, config.elite_rate);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
         times.push_back(diff.count());
@@ -148,7 +153,10 @@ int main(int argc, char *argv[]) {
           }
         }
         fitnesses.push_back(fitness);
+        if (i > 0 && i%10 == 0)
+          std::cout << ".";
       }
+      std::cout << std::endl;
       double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
       double fit_var;
       for (int i = 0; i < fitnesses.size(); ++i) {
@@ -168,7 +176,7 @@ int main(int argc, char *argv[]) {
       mean_times.push_back(avg_time);
       stdev_times.push_back(time_stddev);
 
-      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + method + "_" + std::to_string(nr)+"_robots_util.csv");
+      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + config.method + "_" + std::to_string(nr)+"_robots_util.csv");
       std::vector<double_t>::iterator it;
       for (it = fitnesses.begin(); it != fitnesses.end() - 1; ++it){
         util_results_file << *it << ",";
@@ -176,14 +184,14 @@ int main(int argc, char *argv[]) {
       util_results_file << fitnesses.back() << "\n";
       util_results_file.close();
 
-      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + method + "_" + std::to_string(nr)+"_robots_time.csv");
+      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/nr_" + config.method + "_" + std::to_string(nr)+"_robots_time.csv");
       for (it = times.begin(); it != times.end() - 1; ++it){
         time_results_file << *it << ",";
       }
       time_results_file << fitnesses.back() << "\n";
       time_results_file.close();
     }
-    util_file << "EV-" << method << " ";
+    util_file << "GA-" << config.method << " ";
     for (auto &mean_fit: mean_fitnesses) {
       util_file << "& " << mean_fit << " ";
     }
@@ -194,7 +202,7 @@ int main(int argc, char *argv[]) {
     }
     util_file << "\\\\\n";
 
-    time_file << "EV-" << method << " ";
+    time_file << "GA-" << config.method << " ";
     for (auto &mean_time: mean_times) {
       time_file << "& " << mean_time << " ";
     }
@@ -204,8 +212,8 @@ int main(int argc, char *argv[]) {
       time_file << "& " << stdev_time << " ";
     }
     time_file << "\\\\\n";
-  }
-  util_file << "\\hline\n";
+  }*/
+  /*util_file << "\\hline\n";
   util_file << "\\end{tabular}\n";
   util_file << "\\end{table}\n";
   util_file << "\n";
@@ -237,11 +245,11 @@ int main(int argc, char *argv[]) {
   time_file << "\\hline \\hline\n";
   time_file << "\\multirow{2}{*}{Algorithm} & \\multicolumn{5}{c}{Budget} \\Tstrut \\\\\n";
   time_file << "& 100\\% & 75\\%  & 50\\%  & 25\\% \\Bstrut \\\\ \\hline\n";
-  time_file << "COP 5\\% & & & & \\Tstrut \\\\\n";
+  time_file << "COP 5\\% & & & & \\Tstrut \\\\\n";*/
 
   std::vector<double_t> energy_coef = {1, 0.75, 0.5, 0.25};
   size_t nr = 3;
-  for (auto &method : grasp_methods) {
+  for (auto &config : C) {
     mean_fitnesses.clear();
     stddev_fitnesses.clear();
     mean_times.clear();
@@ -252,19 +260,10 @@ int main(int argc, char *argv[]) {
       max_cost_v = std::vector<double_t>(nr, ec * double_t(total_cost) / double_t(nr));
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(cost_mat,
-                               rewards,
-                               max_cost_v,
-                               0,
-                               82,
-                               g,
-                               100,
-                               50,
-                               0,
-                               0.75,
-                               method,
-                               std::__cxx11::string(),
-                               0);
+        Chromosome c = ga_ctop(
+            cost_mat, rewards, max_cost_v, 0, 82, g, config.pop_size,
+            config.num_gen, config.tour_size, config.cx_rate, config.mut_rate,
+            config.method, config.elite_rate);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> diff = end - start;
         times.push_back(diff.count());
@@ -305,7 +304,10 @@ int main(int argc, char *argv[]) {
           }
         }
         fitnesses.push_back(fitness);
+        if (i > 0 && i%10 == 0)
+          std::cout << ".";
       }
+      std::cout << std::endl;
       double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
       double fit_var;
       for (int i = 0; i < fitnesses.size(); ++i) {
@@ -324,7 +326,7 @@ int main(int argc, char *argv[]) {
       double time_stddev = sqrt(time_var);
       mean_times.push_back(avg_time);
       stdev_times.push_back(time_stddev);
-      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + method + "_" + std::to_string(nr)+"_robots_util.csv");
+      util_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + config.method + "_" + std::to_string(ec)+"_util.csv");
       std::vector<double_t>::iterator it;
       for (it = fitnesses.begin(); it != fitnesses.end() - 1; ++it){
         util_results_file << *it << ",";
@@ -332,14 +334,14 @@ int main(int argc, char *argv[]) {
       util_results_file << fitnesses.back() << "\n";
       util_results_file.close();
 
-      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + method + "_" + std::to_string(nr)+"_robots_time.csv");
+      time_results_file.open("/home/nick/ClionProjects/LWGA/runs/en_" + config.method + "_" + std::to_string(ec)+"_time.csv");
       for (it = times.begin(); it != times.end() - 1; ++it){
         time_results_file << *it << ",";
       }
       time_results_file << fitnesses.back() << "\n";
       time_results_file.close();
     }
-    util_file << "EV-" << method << " ";
+    /*util_file << "GA-" << config.method << " ";
     for (auto &mean_fit: mean_fitnesses) {
       util_file << "& " << mean_fit << " ";
     }
@@ -350,7 +352,7 @@ int main(int argc, char *argv[]) {
     }
     util_file << "\\\n";
 
-    time_file << "EV-" << method << " ";
+    time_file << "GA-" << config.method << " ";
     for (auto &mean_time: mean_times) {
       time_file << "& " << mean_time << " ";
     }
@@ -359,9 +361,9 @@ int main(int argc, char *argv[]) {
     for (auto &stdev_time: stdev_times) {
       time_file << "& " << stdev_time << " ";
     }
-    time_file << "\\\n";
+    time_file << "\\\n";*/
   }
-  util_file << "\\hline\n";
+  /*util_file << "\\hline\n";
   util_file << "\\end{tabular}\n";
   util_file << "\\end{table}\n";
   util_file << "\n";
@@ -372,8 +374,9 @@ int main(int argc, char *argv[]) {
   time_file << "\n";
 
   util_file.close();
-  time_file.close();
+  time_file.close();*/
 //======================================================================================================================
+#if 0
   util_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_qualitative_comparisson_util.txt");
   time_file.open("/home/nick/ClionProjects/LWGA/runs/ctop_qualitative_comparisson_time.txt");
 
@@ -663,6 +666,6 @@ int main(int argc, char *argv[]) {
 
   util_file.close();
   time_file.close();
-
+#endif
   return 0;
 }

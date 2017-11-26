@@ -647,43 +647,46 @@ int main(int argc, char *argv[]) {
       pop_size, pop_size_lim, num_gen_lim, tour_size_lim, cx_lim, mut_lim,
       elites_lim, rating_interval, g);
   Problems P = generateProblems();
-  uint8_t max_exp = 10;//10;
+  uint8_t max_exp = 5;//10;
   uint8_t max_runs = 10;//25;
   double_t MPS = pop_size / 2;
-  for (uint8_t exp = 0; exp < max_exp; ++exp) {
-    for (size_t config = 0; config < C.size(); ++config) {
-      C[config].initResults(P.size(), max_runs);
-      std::cout << "Configuration["<< std::setfill('0') << std::setw(3)
-                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
-                << unsigned(C[config].pop_size()) << ", "
-                << unsigned(C[config].tour_size()) << ", "
-                << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
-                << C[config].elitist_rate() << "]" << std::endl;
-      for (size_t prob = 0; prob < P.size(); ++prob) {
-        for (uint8_t run = 0; run < max_runs; ++run) {
+  std::vector<std::string> methods = {"RANDOM", "NNGRASP"};
+  for (auto &method: methods) {
+    std::cout << method << std::endl;
+    for (uint8_t exp = 0; exp < max_exp; ++exp) {
+      for (size_t config = 0; config < C.size(); ++config) {
+        C[config].initResults(P.size(), max_runs);
+        std::cout << "Configuration[" << std::setfill('0') << std::setw(3)
+                  << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+                  << unsigned(C[config].pop_size()) << ", "
+                  << unsigned(C[config].tour_size()) << ", "
+                  << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+                  << C[config].elitist_rate() << "]" << std::endl;
+        for (size_t prob = 0; prob < P.size(); ++prob) {
+          for (uint8_t run = 0; run < max_runs; ++run) {
 //          std::cout << "Running configuration " << std::setfill('0')
 //                    << std::setw(3) << config << ", problem "
 //                    << std::setfill('0') << std::setw(3) << prob
 //                    << ", run " << std::setfill('0') << std::setw(3)
 //                    << unsigned(run) << std::endl;
-          Chromosome c;
-          double_t result;
-          auto start = std::chrono::high_resolution_clock::now();
-          c = ga_ctop(
-              P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
-              0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
-              C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),
-              C[config].mut_rate(), "NNGRASP", C[config].elitist_rate()
-          );
-          auto end = std::chrono::high_resolution_clock::now();
-          std::chrono::duration<double> diff = end - start;
-          result = evaluateChromosome(
-              c, P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v);
-          C[config].results(prob, run, result);
-          C[config].time_results(prob, run, diff.count());
+            Chromosome c;
+            double_t result;
+            auto start = std::chrono::high_resolution_clock::now();
+            c = ga_ctop(
+                P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
+                0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
+                C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),
+                C[config].mut_rate(), "NNGRASP", C[config].elitist_rate()
+            );
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> diff = end - start;
+            result = evaluateChromosome(
+                c, P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v);
+            C[config].results(prob, run, result);
+            C[config].time_results(prob, run, diff.count());
+          }
         }
       }
-    }
 
 //    for (size_t config = 0; config < C.size(); ++config) {
 //      char comma[3] = {'\0', ' ', '\0'};
@@ -700,31 +703,31 @@ int main(int argc, char *argv[]) {
 //      }
 //    }
 
-    for (size_t config = 0; config < C.size(); ++config) {
-      C[config].initGames(C.size() - 1);
-    }
-    std::cout << "initialised games" << std::endl;
-    for (size_t config1 = 0; config1 < C.size(); ++config1) {
-      for (size_t config2 = config1 + 1; config2 < C.size(); ++config2) {
-        Game g1, g2;
-        g1.opponent_rating = C[config2].rating();
-        g1.opponent_rating_deviation = C[config2].rating_deviation();
-        g1.opponent_rating_interval = C[config2].rating_interval();
-        g1.results.reserve(P.size());
-        g2.opponent_rating = C[config1].rating();
-        g2.opponent_rating_deviation = C[config1].rating_deviation();
-        g2.opponent_rating_interval = C[config1].rating_interval();
-        g2.results.reserve(P.size());
-        for (size_t prob = 0; prob < P.size(); ++prob) {
-          Vector<double_t> p_results_1, p_results_2;
-          p_results_1.reserve(max_runs);
-          p_results_2.reserve(max_runs);
-          for (uint8_t run = 0; run < max_runs; ++run) {
-            double_t p1_res = C[config1].results(prob, run);
-            double_t p2_res = C[config2].results(prob, run);
-            double_t p1_time = C[config1].time_results(prob, run);
-            double_t p2_time = C[config2].time_results(prob, run);
-            double_t timediff = p1_time - p2_time;
+      for (size_t config = 0; config < C.size(); ++config) {
+        C[config].initGames(C.size() - 1);
+      }
+      std::cout << "initialised games" << std::endl;
+      for (size_t config1 = 0; config1 < C.size(); ++config1) {
+        for (size_t config2 = config1 + 1; config2 < C.size(); ++config2) {
+          Game g1, g2;
+          g1.opponent_rating = C[config2].rating();
+          g1.opponent_rating_deviation = C[config2].rating_deviation();
+          g1.opponent_rating_interval = C[config2].rating_interval();
+          g1.results.reserve(P.size());
+          g2.opponent_rating = C[config1].rating();
+          g2.opponent_rating_deviation = C[config1].rating_deviation();
+          g2.opponent_rating_interval = C[config1].rating_interval();
+          g2.results.reserve(P.size());
+          for (size_t prob = 0; prob < P.size(); ++prob) {
+            Vector<double_t> p_results_1, p_results_2;
+            p_results_1.reserve(max_runs);
+            p_results_2.reserve(max_runs);
+            for (uint8_t run = 0; run < max_runs; ++run) {
+              double_t p1_res = C[config1].results(prob, run);
+              double_t p2_res = C[config2].results(prob, run);
+              double_t p1_time = C[config1].time_results(prob, run);
+              double_t p2_time = C[config2].time_results(prob, run);
+              double_t timediff = p1_time - p2_time;
 
 //            if(timediff < 0) {
 //              p1_res = p1_res + 0.05 * p1_res;
@@ -735,102 +738,110 @@ int main(int argc, char *argv[]) {
 //              p2_res = p2_res + 0.05 * p2_res;
 //            }
 
-            if (logically_equal(p1_res, p2_res)) {
-              p_results_1.push_back(0.5);
-              p_results_2.push_back(0.5);
-            } else if (p1_res < p2_res) {
-              p_results_1.push_back(0.0);
-              p_results_2.push_back(1.0);
-            } else {
-              p_results_1.push_back(1.0);
-              p_results_2.push_back(0.0);
+              if (logically_equal(p1_res, p2_res)) {
+                p_results_1.push_back(0.5);
+                p_results_2.push_back(0.5);
+              } else if (p1_res < p2_res) {
+                p_results_1.push_back(0.0);
+                p_results_2.push_back(1.0);
+              } else {
+                p_results_1.push_back(1.0);
+                p_results_2.push_back(0.0);
+              }
+              if (logically_equal(p1_time, p2_time)) {
+                p_results_1.back() += 0.0;
+                p_results_2.back() += 0.0;
+              } else if (p1_time < p2_time) {
+                p_results_1.back() += 0.1;
+                p_results_2.back() += -0.1;
+              } else {
+                p_results_2.back() += 0.1;
+                p_results_1.back() += -0.1;
+              }
             }
-            if (logically_equal(p1_time, p2_time)) {
-              p_results_1.back() += 0.0;
-              p_results_2.back() += 0.0;
-            } else if (p1_time < p2_res) {
-              p_results_1.back() += 0.1;
-              p_results_2.back() += -0.1;
-            } else {
-              p_results_2.back() += 0.1;
-              p_results_1.back() += -0.1;
-            }
+            g1.results.push_back(std::move(p_results_1));
+            g2.results.push_back(std::move(p_results_2));
           }
-          g1.results.push_back(std::move(p_results_1));
-          g2.results.push_back(std::move(p_results_2));
+          C[config1].insertGame(std::move(g1));
+          C[config2].insertGame(std::move(g2));
         }
-        C[config1].insertGame(std::move(g1));
-        C[config2].insertGame(std::move(g2));
       }
+      std::cout << "Played games" << std::endl;
+      for (size_t config = 0; config < C.size(); ++config) {
+        C[config].updateRating();
+      }
+      std::cout << "Updated rating" << std::endl;
+      auto sortRuleLambda =
+          [](const Configuration &c1, const Configuration &c2) -> bool {
+            return c1.rating() > c2.rating();
+          };
+      std::sort(C.begin(), C.end(), sortRuleLambda);
+      for (Configurations::iterator it = C.begin(); it != C.end(); ++it) {
+        std::cout << it->rating() << " " << it->getRatingInterval().min << " "
+                  << it->getRatingInterval().max << std::endl;
+      }
+      Configurations parents;
+      Configurations newC;
+      parents.reserve(C.size());
+      newC.reserve(C.size());
+//    parents.push_back(*C.begin());
+      for (Configurations::iterator it = C.begin(); it != C.begin() + 10;
+           ++it) {
+        parents.push_back(*it);
+      }
+      Limits<double_t> best_interval = parents.front().getRatingInterval();
+      for (Configurations::iterator it = C.begin() + 1; it != C.end(); ++it) {
+        if (!(best_interval.min > it->getRatingInterval().max ||
+            parents.size() >= MPS)) {
+          parents.push_back(*it);
+        }
+      }
+      for (size_t config = 0; config < 10; ++config) {
+        std::cout << "Parent[" << std::setfill('0') << std::setw(3)
+                  << config << "]: [" << unsigned(parents[config].num_gen())
+                  << ", "
+                  << unsigned(parents[config].pop_size()) << ", "
+                  << unsigned(parents[config].tour_size()) << ", "
+                  << parents[config].cx_rate() << ", "
+                  << parents[config].mut_rate() << ", "
+                  << parents[config].elitist_rate() << "]" << std::endl;
+      }
+      newC = parents;
+      while (newC.size() < pop_size) {
+        std::vector<size_t> parent_indices;
+        parent_indices = get_population_sample(parents.size(), 2, g);
+        Configuration child;
+        cx(C[parent_indices[0]], C[parent_indices[1]], child, cx_prob, g);
+        mut(child, mut_prob, g);
+        newC.push_back(std::move(child));
+      }
+      C = newC;
+      for (size_t config = 0; config < 10; ++config) {
+        std::cout << "Config[" << std::setfill('0') << std::setw(3)
+                  << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+                  << unsigned(C[config].pop_size()) << ", "
+                  << unsigned(C[config].tour_size()) << ", "
+                  << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+                  << C[config].elitist_rate() << "]" << std::endl;
+      }
+      std::cout << "Generated new population" << std::endl;
     }
-    std::cout << "Played games" << std::endl;
-    for (size_t config = 0; config < C.size(); ++config) {
-      C[config].updateRating();
-    }
-    std::cout << "Updated rating" << std::endl;
     auto sortRuleLambda =
         [](const Configuration &c1, const Configuration &c2) -> bool {
           return c1.rating() > c2.rating();
         };
     std::sort(C.begin(), C.end(), sortRuleLambda);
-    for(Configurations::iterator it = C.begin(); it != C.end(); ++it){
-      std::cout << it->rating() << " " << it->getRatingInterval().min << " " << it->getRatingInterval().max << std::endl;
-    }
-    Configurations parents;
-    Configurations newC;
-    parents.reserve(C.size());
-    newC.reserve(C.size());
-//    parents.push_back(*C.begin());
-    for(Configurations::iterator it = C.begin(); it != C.begin()+10; ++it){
-      parents.push_back(*it);
-    }
-    Limits<double_t> best_interval = parents.front().getRatingInterval();
-    for (Configurations::iterator it = C.begin() + 1; it != C.end(); ++it) {
-      if (!(best_interval.min > it->getRatingInterval().max ||
-          parents.size() >= MPS)) {
-        parents.push_back(*it);
-      }
-    }
-    for(size_t config = 0; config < 10; ++config) {
-      std::cout << "Parent["<< std::setfill('0') << std::setw(3)
-                << config << "]: [" << unsigned(parents[config].num_gen()) << ", "
-                << unsigned(parents[config].pop_size()) << ", "
-                << unsigned(parents[config].tour_size()) << ", "
-                << parents[config].cx_rate() << ", " << parents[config].mut_rate() << ", "
-                << parents[config].elitist_rate() << "]" << std::endl;
-    }
-    newC = parents;
-    while (newC.size() < pop_size) {
-      std::vector<size_t> parent_indices;
-      parent_indices = get_population_sample(parents.size(), 2, g);
-      Configuration child;
-      cx(C[parent_indices[0]], C[parent_indices[1]], child, cx_prob, g);
-      mut(child, mut_prob, g);
-      newC.push_back(std::move(child));
-    }
-    C = newC;
-    for(size_t config = 0; config < 10; ++config) {
-      std::cout << "Config["<< std::setfill('0') << std::setw(3)
-                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
-	        << unsigned(C[config].pop_size()) << ", "
-	        << unsigned(C[config].tour_size()) << ", "
-	        << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
-	        << C[config].elitist_rate() << "]" << std::endl;
-    }
-    std::cout << "Generated new population" << std::endl;
-  }
-  auto sortRuleLambda =
-      [](const Configuration &c1, const Configuration &c2) -> bool {
-        return c1.rating() > c2.rating();
-      };
-  std::sort(C.begin(), C.end(), sortRuleLambda);
-  std::cout << "Config\t" << "Rating\t" << "Pop. Size\t" << "Num. Generations\t" << "Tour size\t" << "CX%\t" << "MUT%\t" << "Elite%\t" << std::endl;
-  for (size_t config = 0; config < C.size(); ++config) {
-    std::cout << std::setfill('0') << std::setw(3) << config << "\t"
-              << C[config].rating() << "\t" << unsigned(C[config].pop_size()) << "\t"
-              << unsigned(C[config].num_gen()) << "\t" << unsigned(C[config].tour_size()) << "\t"
-              << C[config].cx_rate() << "\t" << C[config].mut_rate() << "\t"
-              << C[config].elitist_rate() << "\t" << std::endl;
+    std::cout << "Config\t" << "Rating\t" << "Pop. Size\t"
+              << "Num. Generations\t" << "Tour size\t" << "CX%\t" << "MUT%\t"
+              << "Elite%\t" << std::endl;
+    for (size_t config = 0; config < C.size(); ++config) {
+      std::cout << std::setfill('0') << std::setw(3) << config << "\t"
+                << C[config].rating() << "\t" << unsigned(C[config].pop_size())
+                << "\t"
+                << unsigned(C[config].num_gen()) << "\t"
+                << unsigned(C[config].tour_size()) << "\t"
+                << C[config].cx_rate() << "\t" << C[config].mut_rate() << "\t"
+                << C[config].elitist_rate() << "\t" << std::endl;
 //    char comma[3] = {'\0', ' ', '\0'};
 //    std::cout << "Config[" << std::setfill('0')
 //              << std::setw(3) << config << "]: " << std::endl;
@@ -843,6 +854,7 @@ int main(int argc, char *argv[]) {
 //      }
 //      std::cout << "]" << std::endl;
 //    }
+    }
   }
   return 0;
 }

@@ -81,8 +81,8 @@ int main() {
 //    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 26, g);
     Chromosome c = ga_ctop(
 //        cost_mat, rewards, max_cost_v, 0, 82, g, 250, 50, 8, 0.9, 0.8,
-        cost_mat, rewards, max_cost_v, 0, 82, g, 250, 35, 3, 0.6, 0.6,
-        "RANDOM", 0.04);
+        cost_mat, rewards, max_cost_v, 0, 82, g, 250, 50, 5, 0.9, 0.7,
+        "NNGRASP", 0.03);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
