@@ -9,6 +9,7 @@
 #include <random>
 #include <algorithm>
 #include <unordered_set>
+#include <tuple>
 
 typedef std::pair<double, double> Vertex;
 
@@ -19,6 +20,10 @@ std::vector<size_t> get_population_sample(size_t pop_size, int samples, std::mt1
 Path two_opt_swap(Path &path, size_t &i, size_t &k);
 
 std::pair<Path, double> two_opt(Path &path, const Matrix<double> &cost_mat);
+
+std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
+    Path &path, Vector<double_t> &angles, double_t cost,
+    const Matrix<Matrix<double>> &cost_mat);
 
 void mutual_two_opt(Path &path1, Path &path2, const Matrix<double_t> &cost_mat, double_t max_cost1, double_t max_cost2);
 

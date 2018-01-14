@@ -150,4 +150,40 @@ mutual_two_opt(Path &path1, Path &path2, const Matrix<double_t> &cost_mat, doubl
   mutual.pop_back();
   path1.assign(mutual.begin(), mutual.end());
 }
+std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
+    Path &path, Vector<double_t> &angles, double_t cost,
+    const Matrix<Matrix<double>> &cost_mat) {
+  bool start_again = true;
+  Path tmp_path = std::vector<uint_fast32_t>(path);
+  double tmp_path_cost = cost;
+  double best_cost = tmp_path_cost;
+
+  while (start_again) {
+    start_again = false;
+
+    for (size_t i = 1; i < tmp_path.size() - 2; ++i) {
+      for (size_t k = i + 1; k < tmp_path.size() - 1; ++k) {
+        Path new_path = two_opt_swap(tmp_path, i, k);
+
+        //This works only for symmetric costs. for non-symmetric you must change that and calculate the whole reverse path cost.
+        //TODO: Check cost for all angles.
+        double new_cost = best_cost
+            - cost_mat[tmp_path[i-1]][tmp_path[i]][angles[i-1]][angles[i]]
+            - cost_mat[tmp_path[k]][tmp_path[k+1]][angles[k]][angles[k+1]]
+            + cost_mat[tmp_path[i-1]][tmp_path[k]][angles[i-1]][angles[k]]
+            + cost_mat[tmp_path[i]][tmp_path[k+1]][angles[i]][angles[k+1]];
+
+        // Round it to avoid geting stuck in infinite looping due to machine rounding errors.
+        new_cost = round( new_cost * 100000.0 ) / 100000.0;
+
+        if (new_cost < best_cost) {
+          tmp_path = new_path;
+          start_again = true;
+          best_cost = new_cost;
+        }
+      }
+    }
+  }
+  return std::make_tuple(Path(), Vector<double_t>(), 0.0);
+}
 

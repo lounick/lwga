@@ -60,6 +60,8 @@ set(ICRA18_CTOP_MIQP_COMPARE
 include_directories(.)
 include_directories(include)
 
+add_library(dubins-curves src/dubins.c)
+
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
 target_link_libraries(cop-ga pthread)
