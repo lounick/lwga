@@ -60,7 +60,7 @@ set(ICRA18_CTOP_MIQP_COMPARE
 include_directories(.)
 include_directories(include)
 
-add_library(dubins-curves src/dubins.c)
+add_library(dubins-curves src/dubins.cpp)
 
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
@@ -80,3 +80,6 @@ target_link_libraries(icra18_ctop_miqp_compare pthread)
 
 add_executable(crs_tuner ${CTOP_TUNING})
 target_link_libraries(crs_tuner pthread)
+
+add_executable(dcop-ga src/dubins.cpp src/ga_utils.cpp src/dcop_ga.cpp src/dcop_ga_main.cpp)
+target_link_libraries(dcop-ga pthread)

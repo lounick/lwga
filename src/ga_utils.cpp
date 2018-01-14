@@ -5,6 +5,7 @@
 #include "ga_utils.h"
 #include <cmath>
 #include <iostream>
+#include "dubins.h"
 
 double find_distance(Point2D a, Point2D b) {
   return sqrt(pow(a.first - b.first, 2) + pow(a.second - b.second, 2));
@@ -33,6 +34,15 @@ Path two_opt_swap(Path &path, size_t &i, size_t &k) {
   std::reverse(new_path.begin() + i, new_path.begin() + k + 1);
   return new_path;
 }
+
+std::pair<Path, Vector<double_t>> two_opt_swap(
+    const Path &path, const Vector<double_t> &angles, size_t &i, size_t &k) {
+  Path new_path = std::vector<uint_fast32_t>(path);
+  Vector<double_t> new_angles = Vector<double_t> (angles);
+  std::reverse(new_path.begin() + i, new_path.begin() + k + 1);
+  std::reverse(new_angles.begin() + i, new_angles.begin() + k + 1);
+  return std::make_pair(new_path, new_angles);
+};
 
 std::pair<Path, double> two_opt(Path &path, const Matrix<double> &cost_mat) {
 
@@ -111,10 +121,12 @@ double calculate_fitness(Path p, std::vector<std::vector<double> > cost_mat, std
 
 void print_path(Path p) {
   std::cout << "[";
-  for (Path::iterator it = p.begin(); it != p.end() - 1; ++it){
-    std::cout << *it << ",";
+  std::string comma = "";
+  for (Path::iterator it = p.begin(); it != p.end(); ++it){
+    std::cout << comma << *it;
+    comma = ", ";
   }
-  std::cout << p.back() << "]" << std::endl;
+  std::cout << "]" << std::endl;
 }
 
 std::pair<std::vector<Vertex>, std::vector<double>>
@@ -150,40 +162,81 @@ mutual_two_opt(Path &path1, Path &path2, const Matrix<double_t> &cost_mat, doubl
   mutual.pop_back();
   path1.assign(mutual.begin(), mutual.end());
 }
-std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
-    Path &path, Vector<double_t> &angles, double_t cost,
-    const Matrix<Matrix<double>> &cost_mat) {
-  bool start_again = true;
-  Path tmp_path = std::vector<uint_fast32_t>(path);
-  double tmp_path_cost = cost;
-  double best_cost = tmp_path_cost;
 
+double_t get_dubins_path_cost(
+    const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
+    Path &path, Vector<double_t> &angles) {
+  double_t cost = 0;
+  double_t q0[3];
+  double_t q1[3];
+  std::unique_ptr<DubinsPath> ptp_path = std::make_unique<DubinsPath>();
+  for (size_t i = 1; i < path.size(); ++i){
+    q0[0] = nodes->at(path[i-1]).first;
+    q0[1] = nodes->at(path[i-1]).second;
+    q0[2] = angles[i-1];
+    q1[0] = nodes->at(path[i]).first;
+    q1[1] = nodes->at(path[i]).second;
+    q1[2] = angles[i];
+    dubins_init(q0, q1, rho, ptp_path.get());
+    cost += dubins_path_length(ptp_path.get());
+  }
+  return cost;
+}
+
+std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
+    const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
+    Path &path, Vector<double_t> &angles, double_t cost) {
+  bool start_again = true;
+  Path tmp_path = Path(path);
+  Vector<double_t> tmp_angles = Vector<double_t>(angles);
+  double tmp_path_cost = round( cost * 100000.0 ) / 100000.0;
+  double best_cost = tmp_path_cost;
+  int count = 0;
   while (start_again) {
     start_again = false;
 
     for (size_t i = 1; i < tmp_path.size() - 2; ++i) {
       for (size_t k = i + 1; k < tmp_path.size() - 1; ++k) {
-        Path new_path = two_opt_swap(tmp_path, i, k);
+        Path new_path;
+        Vector<double_t> new_angles;
+        std::tie(new_path, new_angles) = two_opt_swap(tmp_path, angles, i, k);
+        for (size_t idx = i; idx < k + 1; ++ idx) {
+          new_angles[idx] -= M_PI;
+        }
 
-        //This works only for symmetric costs. for non-symmetric you must change that and calculate the whole reverse path cost.
-        //TODO: Check cost for all angles.
-        double new_cost = best_cost
-            - cost_mat[tmp_path[i-1]][tmp_path[i]][angles[i-1]][angles[i]]
-            - cost_mat[tmp_path[k]][tmp_path[k+1]][angles[k]][angles[k+1]]
-            + cost_mat[tmp_path[i-1]][tmp_path[k]][angles[i-1]][angles[k]]
-            + cost_mat[tmp_path[i]][tmp_path[k+1]][angles[i]][angles[k+1]];
+        //TODO: Maybe bin the angles to categories
+        new_angles[i-1] = atan2(
+            nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
+            nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
+        new_angles[i] = atan2(
+            nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
+            nodes->at(new_path[i+1]).first - nodes->at(new_path[i]).first);
+        new_angles[k-1] = atan2(
+            nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
+            nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
+        new_angles[k] = atan2(
+            nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
+            nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
 
+        double new_cost = get_dubins_path_cost(nodes, rho, new_path, new_angles);
         // Round it to avoid geting stuck in infinite looping due to machine rounding errors.
         new_cost = round( new_cost * 100000.0 ) / 100000.0;
 
-        if (new_cost < best_cost) {
+        if (new_cost < best_cost || logically_equal(new_cost, best_cost)) {
           tmp_path = new_path;
+          tmp_angles = new_angles;
           start_again = true;
           best_cost = new_cost;
         }
       }
     }
+    count++;
   }
-  return std::make_tuple(Path(), Vector<double_t>(), 0.0);
+  return std::make_tuple(tmp_path, tmp_angles, best_cost);
 }
 
+bool logically_equal(double a, double b, double error_factor) {
+  return a == b ||
+      std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon() *
+          error_factor;
+}

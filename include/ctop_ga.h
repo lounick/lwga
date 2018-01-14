@@ -22,8 +22,6 @@
 #include "ga_types.h"
 #include "ga_utils.h"
 
-bool logically_equal(double a, double b, double error_factor = 1.0);
-
 class Gene {
  public:
   Path path;

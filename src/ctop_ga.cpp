@@ -1153,9 +1153,3 @@ Insertion::Insertion(uint_fast32_t vertex,
       total_reward(total_reward), heuristic(heuristic) {
 
 }
-
-bool logically_equal(double a, double b, double error_factor) {
-  return a == b ||
-      std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon() *
-          error_factor;
-}
