@@ -12,6 +12,7 @@
 #include <tuple>
 #include <memory>
 #include <iostream>
+#include <iomanip>
 
 typedef std::pair<double, double> Vertex;
 
@@ -51,9 +52,16 @@ void print_vector(Vector<T> v){
   std::cout << "[";
   std::string comma = "";
   for (typename Vector<T>::iterator it = v.begin(); it != v.end(); ++it){
-    std::cout << comma << *it;
+    std::cout << comma << std::setprecision(10) << *it;
     comma = ", ";
   }
   std::cout << "]" << std::endl;
 }
+
+template <typename T> int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
+
+double_t normalise_angle(double_t angle);
 #endif //LWGA_GA_UTILS_H

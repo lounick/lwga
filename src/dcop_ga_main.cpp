@@ -77,12 +77,12 @@ int main(int argc, char *argv[]){
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
-        nodes, std_angles, rho, cost_mat, rewards, 30, 0, 26, g);
+        nodes, std_angles, rho, cost_mat, rewards, 26, 0, 26, g);
 //    dcop_ga::Chromosome c = dcop_ga::generate_chromosome(
 //        nodes, std_angles, rho, 30,
 //        0, 26, cost_mat, g);
-    std::tie(c.path, c.angles, c.cost) =
-        dubins_two_opt(nodes, rho, c.path, c.angles, c.cost);
+//    std::tie(c.path, c.angles, c.cost) =
+//        dubins_two_opt(nodes, rho, c.path, c.angles, c.cost);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());
@@ -90,19 +90,28 @@ int main(int argc, char *argv[]){
 //      std::cout << vertex << " ";
 //    }
 //    std::cout << std::endl;
-    Path path_after;
-    Vector<double_t> angles_after;
-    double_t cost_before, cost_after;
-    cost_before = get_dubins_path_cost(nodes, rho, c.path, c.angles);
-    std::cout << cost_before << std::endl;
+//    Path path_after = {0, 4, 9, 15, 20, 19, 13, 12, 17, 22, 21, 16, 11, 6, 1, 2, 3, 8, 14, 18, 24, 26};
+//    Vector<double_t> angles_after = /*{0, 0.349066, 6.10865, 0.349066, 5.93412,
+//    4.01426, 5.06145, 5.23599, 0.523599, 0.349066,
+//    2.79253, 2.61799, 2.61799, 2.61799, 2.61799,
+//    0.698132, 1.5708, 4.71239, 0.698132, 5.58505,
+//    0.698132, 4.88692};*/
+//        {0, 0.349066, 6.10865, 0.349066, 5.93412,
+//        4.01426, 5.06145, 5.23599, 0.523599, 0.349066,
+//        M_PI, M_PI, M_PI, M_PI, 2.61799,
+//        0.698132, 1.5708, 4.71239, 0.698132, 5.58505,
+//        0.698132, 4.88692};
+//    double_t cost_before, cost_after;
+//    cost_before = get_dubins_path_cost(nodes, rho, c.path, c.angles);
+    std::cout << c.cost << std::endl;
     print_path(c.path);
     print_vector<double_t>(c.angles);
-    for(int i =0; i < 100; ++i)
-    std::tie(path_after, angles_after, cost_after) =
-        dubins_two_opt(nodes, rho, c.path, c.angles, cost_before);
-    std::cout << cost_after << std::endl;
-    print_path(path_after);
-    print_vector<double_t>(angles_after);
+//    std::tie(path_after, angles_after, cost_after) =
+//        dubins_two_opt(nodes, rho, path_after, angles_after, cost_before);
+//        //dubins_two_opt(nodes, rho, c.path, c.angles, cost_before);
+//    std::cout << cost_after << std::endl;
+//    print_path(path_after);
+//    print_vector<double_t>(angles_after);
 
     double fitness = 0;
     std::vector<uint_fast32_t> vertices(cost_mat.size());

@@ -183,6 +183,14 @@ double_t get_dubins_path_cost(
   return cost;
 }
 
+double_t normalise_angle(double_t angle){
+  double_t ratio = std::abs(angle)/(2*M_PI);
+  double_t ret = sgn<double_t>(angle) * (ratio - std::floor(ratio)) * (2*M_PI);
+  if (ret < 0)
+    ret += 2*M_PI;
+  return ret;
+}
+
 std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
     const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
     Path &path, Vector<double_t> &angles, double_t cost) {
@@ -202,6 +210,10 @@ std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
         std::tie(new_path, new_angles) = two_opt_swap(tmp_path, angles, i, k);
         for (size_t idx = i; idx < k + 1; ++ idx) {
           new_angles[idx] -= M_PI;
+        }
+
+        for (size_t a_idx = 0; a_idx < new_angles.size(); ++a_idx) {
+          normalise_angle(new_angles[a_idx]);
         }
 
         //TODO: Maybe bin the angles to categories
