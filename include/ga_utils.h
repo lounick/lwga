@@ -64,4 +64,8 @@ template <typename T> int sgn(T val) {
 
 
 double_t normalise_angle(double_t angle);
+
+std::pair<Vector<double_t>, double_t> straighten_path(
+    const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
+    Path &path, Vector<double_t> &angles, double_t cost);
 #endif //LWGA_GA_UTILS_H

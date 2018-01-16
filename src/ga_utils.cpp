@@ -177,7 +177,9 @@ double_t get_dubins_path_cost(
     q1[0] = nodes->at(path[i]).first;
     q1[1] = nodes->at(path[i]).second;
     q1[2] = angles[i];
-    dubins_init(q0, q1, rho, ptp_path.get());
+    int ret = dubins_init(q0, q1, rho, ptp_path.get());
+    if (ret != 0)
+      std::cout << "Dubins ret: " << ret << std::endl;
     cost += dubins_path_length(ptp_path.get());
   }
   return cost;
@@ -197,7 +199,7 @@ std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
   bool start_again = true;
   Path tmp_path = Path(path);
   Vector<double_t> tmp_angles = Vector<double_t>(angles);
-  double tmp_path_cost = round( cost * 100000.0 ) / 100000.0;
+  double tmp_path_cost = cost;
   double best_cost = tmp_path_cost;
   int count = 0;
   while (start_again) {
@@ -217,18 +219,18 @@ std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
         }
 
         //TODO: Maybe bin the angles to categories
-        new_angles[i-1] = atan2(
-            nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
-            nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
-        new_angles[i] = atan2(
-            nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
-            nodes->at(new_path[i+1]).first - nodes->at(new_path[i]).first);
-        new_angles[k-1] = atan2(
-            nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
-            nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
-        new_angles[k] = atan2(
-            nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
-            nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
+//        new_angles[i-1] = atan2(
+//            nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
+//            nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
+//        new_angles[i] = atan2(
+//            nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
+//            nodes->at(new_path[i+1]).first - nodes->at(new_path[i]).first);
+//        new_angles[k-1] = atan2(
+//            nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
+//            nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
+//        new_angles[k] = atan2(
+//            nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
+//            nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
 
         double new_cost = get_dubins_path_cost(nodes, rho, new_path, new_angles);
         // Round it to avoid geting stuck in infinite looping due to machine rounding errors.
@@ -251,4 +253,31 @@ bool logically_equal(double a, double b, double error_factor) {
   return a == b ||
       std::abs(a - b) < std::abs(std::min(a, b)) * std::numeric_limits<double>::epsilon() *
           error_factor;
+}
+
+std::pair<Vector<double_t>, double_t> straighten_path(
+    const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
+    Path &path, Vector<double_t> &angles, double_t cost){
+  Vector<double_t> tmp_angles = angles;
+  double_t best_cost = cost;
+  bool start_again = true;
+  while(start_again) {
+    start_again = false;
+    for (size_t i = 0; i < tmp_angles.size()-1; ++i){
+      double_t new_angle = atan2(
+          nodes->at(path[i+1]).second - nodes->at(path[i]).second,
+          nodes->at(path[i+1]).first - nodes->at(path[i]).first
+      );
+      double_t tmp_angle = tmp_angles[i];
+      tmp_angles[i] = new_angle;
+      double_t cost = get_dubins_path_cost(nodes, rho, path, tmp_angles);
+      if (cost < best_cost) {
+        best_cost = cost;
+        start_again = true;
+      } else {
+        tmp_angles[i] = tmp_angle;
+      }
+    }
+  }
+  return std::make_pair(tmp_angles, best_cost);
 }

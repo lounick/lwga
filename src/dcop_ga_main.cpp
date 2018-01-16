@@ -67,14 +67,15 @@ int main(int argc, char *argv[]){
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 1;
+  int nexp = 100;
 
   std::random_device rd;
   std::mt19937 g(rd());
 
-  double rho = 0.5;
+  double rho = 0.1;
 
   for (int exp = 0; exp < nexp; exp++) {
+    std::cout << "Experiment: " << exp << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
         nodes, std_angles, rho, cost_mat, rewards, 26, 0, 26, g);
