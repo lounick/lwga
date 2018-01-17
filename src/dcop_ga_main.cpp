@@ -15,9 +15,9 @@ int main(int argc, char *argv[]){
   }
   nodes->push_back(std::make_pair(6, 0));
   Vector<double_t> std_angles;
-  std_angles.reserve(36);
-  for(uint_fast8_t i = 0; i < 36; ++i){
-    std_angles.push_back(i*10*M_PI/180);
+  std_angles.reserve(72);
+  for(uint_fast8_t i = 0; i < 72; ++i){
+    std_angles.push_back(i*5*M_PI/180.0);
   }
 //  Path path_before {0,3,7,12,13,8,2,6,11,17,18,23,26};
 //  Vector<double_t> angles_before = {
@@ -46,18 +46,56 @@ int main(int argc, char *argv[]){
 //    comma = ", ";
 //  }
 //  std::cout << "]" << std::endl;
-  Matrix <double_t> cost_mat;
-  for (int i = 0; i < nodes->size(); i++) {
+  Matrix <double_t> eucledian_cost_mat;
+  for (size_t i = 0; i < nodes->size(); i++) {
     std::vector<double_t > tmp_vec;
-    cost_mat.push_back(tmp_vec);
+    tmp_vec.reserve(nodes->size());
+    eucledian_cost_mat.push_back(tmp_vec);
   }
 
   for (size_t i = 0; i < nodes->size(); i++) {
-    cost_mat[i].push_back(0);
+    eucledian_cost_mat[i].push_back(0);
     for (size_t j = i + 1; j < nodes->size(); j++) {
       double dist = find_distance(nodes->at(i), nodes->at(j));
-      cost_mat[i].push_back(dist);
-      cost_mat[j].push_back(dist);
+      eucledian_cost_mat[i].push_back(dist);
+      eucledian_cost_mat[j].push_back(dist);
+    }
+  }
+
+  double rho = 0.5;
+  Matrix<Matrix<double_t>> dubins_cost_mat;
+  dubins_cost_mat.reserve(nodes->size());
+  for (size_t i = 0; i < nodes->size(); ++i) {
+    Vector<Matrix<double_t>> tmp_vec;
+    tmp_vec.reserve(nodes->size());
+    for(size_t j = 0; j < nodes->size(); ++j){
+      Matrix<double_t> angle_mat;
+      angle_mat.reserve(std_angles.size());
+      for (size_t k = 0; k < std_angles.size(); ++k){
+        Vector<double_t> angle_vec;
+        angle_vec.reserve(std_angles.size());
+        angle_mat.push_back(angle_vec);
+      }
+      tmp_vec.push_back(angle_mat);
+    }
+    dubins_cost_mat.push_back(tmp_vec);
+  }
+
+  for (size_t i = 0; i < nodes->size(); i++) {
+    double_t q0[3] = {nodes->at(i).first, nodes->at(i).second, 0};
+    std::unique_ptr<DubinsPath> ptp_path = std::make_unique<DubinsPath>();
+    for (size_t j = 0; j < nodes->size(); j++) {
+      double_t q1[3] = {nodes->at(j).first, nodes->at(j).second, 0};
+      for (size_t k = 0; k < std_angles.size(); ++k){
+        q0[2] = std_angles[k];
+        for (size_t l = 0; l < std_angles.size(); ++l){
+          q1[2] = std_angles[l];
+          int ret = dubins_init(q0, q1, rho, ptp_path.get());
+          if (ret != 0)
+            std::cout << "Dubins ret: " << ret << std::endl;
+          dubins_cost_mat[i][j][k].push_back(dubins_path_length(ptp_path.get()));
+        }
+      }
     }
   }
 
@@ -72,16 +110,15 @@ int main(int argc, char *argv[]){
   std::random_device rd;
   std::mt19937 g(rd());
 
-  double rho = 0.1;
-
   for (int exp = 0; exp < nexp; exp++) {
     std::cout << "Experiment: " << exp << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
-        nodes, std_angles, rho, cost_mat, rewards, 26, 0, 26, g);
+        nodes, std_angles, rho, dubins_cost_mat,
+        eucledian_cost_mat, rewards, 26, 0, 26, g);
 //    dcop_ga::Chromosome c = dcop_ga::generate_chromosome(
 //        nodes, std_angles, rho, 30,
-//        0, 26, cost_mat, g);
+//        0, 26, eucledian_cost_mat, g);
 //    std::tie(c.path, c.angles, c.cost) =
 //        dubins_two_opt(nodes, rho, c.path, c.angles, c.cost);
     auto end = std::chrono::high_resolution_clock::now();
@@ -106,7 +143,11 @@ int main(int argc, char *argv[]){
 //    cost_before = get_dubins_path_cost(nodes, rho, c.path, c.angles);
     std::cout << c.cost << std::endl;
     print_path(c.path);
-    print_vector<double_t>(c.angles);
+    Vector<double_t> angles;
+    for (size_t i = 0; i < c.angles.size(); ++i) {
+      angles.push_back(std_angles[c.angles[i]]);
+    }
+    print_vector<double_t>(angles);
 //    std::tie(path_after, angles_after, cost_after) =
 //        dubins_two_opt(nodes, rho, path_after, angles_after, cost_before);
 //        //dubins_two_opt(nodes, rho, c.path, c.angles, cost_before);
@@ -115,7 +156,7 @@ int main(int argc, char *argv[]){
 //    print_vector<double_t>(angles_after);
 
     double fitness = 0;
-    std::vector<uint_fast32_t> vertices(cost_mat.size());
+    std::vector<uint_fast32_t> vertices(eucledian_cost_mat.size());
     std::iota(vertices.begin(), vertices.end(), 0);
     std::vector<uint_fast32_t> free_vertices;
     std::vector<uint_fast32_t> visited_vertices = c.path;
@@ -132,8 +173,8 @@ int main(int argc, char *argv[]){
       insert_ret = seen.insert(c.path[i]);
       if (insert_ret.second) {
         for (size_t j = 0; j < free_vertices.size(); j++) {
-          if (cost_mat[c.path[i]][free_vertices[j]] < 2) {
-            extras += std::exp((log(0.01)/2) * cost_mat[c.path[i]][free_vertices[j]]);
+          if (eucledian_cost_mat[c.path[i]][free_vertices[j]] < 2) {
+            extras += std::exp((log(0.01)/2) * eucledian_cost_mat[c.path[i]][free_vertices[j]]);
           }
         }
         fitness += rewards[c.path[i]] + extras;

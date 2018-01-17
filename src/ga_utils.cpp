@@ -35,10 +35,10 @@ Path two_opt_swap(Path &path, size_t &i, size_t &k) {
   return new_path;
 }
 
-std::pair<Path, Vector<double_t>> two_opt_swap(
-    const Path &path, const Vector<double_t> &angles, size_t &i, size_t &k) {
+std::pair<Path, Vector<uint_fast32_t >> two_opt_swap(
+    const Path &path, const Vector<uint_fast32_t > &angles, size_t &i, size_t &k) {
   Path new_path = std::vector<uint_fast32_t>(path);
-  Vector<double_t> new_angles = Vector<double_t> (angles);
+  Vector<uint_fast32_t > new_angles = Vector<uint_fast32_t > (angles);
   std::reverse(new_path.begin() + i, new_path.begin() + k + 1);
   std::reverse(new_angles.begin() + i, new_angles.begin() + k + 1);
   return std::make_pair(new_path, new_angles);
@@ -193,12 +193,26 @@ double_t normalise_angle(double_t angle){
   return ret;
 }
 
-std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
+size_t bin_angle(double_t angle, double_t bin_size){
+  angle *= 180/M_PI;
+  if (angle > 360)
+    angle -=360;
+  angle = round(angle);
+  uint_fast32_t d = angle/bin_size;
+  double_t r = fmod(angle, bin_size);
+  if (r > bin_size/2)
+    ++d;
+  return d;
+}
+
+std::tuple<Path, Vector<uint_fast32_t >, double> dubins_two_opt(
+    Matrix<Matrix<double_t>>&dubins_cost_mat,
+    Vector<double_t> &std_angles,
     const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
-    Path &path, Vector<double_t> &angles, double_t cost) {
+    Path &path, Vector<uint_fast32_t> &angles, double_t cost) {
   bool start_again = true;
   Path tmp_path = Path(path);
-  Vector<double_t> tmp_angles = Vector<double_t>(angles);
+  Vector<uint_fast32_t> tmp_angles = Vector<uint_fast32_t>(angles);
   double tmp_path_cost = cost;
   double best_cost = tmp_path_cost;
   int count = 0;
@@ -208,35 +222,59 @@ std::tuple<Path, Vector<double_t>, double> dubins_two_opt(
     for (size_t i = 1; i < tmp_path.size() - 2; ++i) {
       for (size_t k = i + 1; k < tmp_path.size() - 1; ++k) {
         Path new_path;
-        Vector<double_t> new_angles;
+        Vector<uint_fast32_t> new_angles;
         std::tie(new_path, new_angles) = two_opt_swap(tmp_path, angles, i, k);
         for (size_t idx = i; idx < k + 1; ++ idx) {
-          new_angles[idx] -= M_PI;
+          new_angles[idx] += M_PI;
+          if (new_angles[idx] >= 36){
+            new_angles[idx] -=36;
+          } else {
+            new_angles[idx] +=36;
+          }
         }
 
-        for (size_t a_idx = 0; a_idx < new_angles.size(); ++a_idx) {
-          normalise_angle(new_angles[a_idx]);
+//        for (size_t a_idx = 0; a_idx < new_angles.size(); ++a_idx) {
+//          normalise_angle(new_angles[a_idx]);
+//        }
+
+        double_t angle = atan2(
+            nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
+            nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
+        if (angle < 0) {
+          angle += 2*M_PI;
         }
+        new_angles[i-1] = bin_angle(angle, 5);
 
-        //TODO: Maybe bin the angles to categories
-//        new_angles[i-1] = atan2(
-//            nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
-//            nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
-//        new_angles[i] = atan2(
-//            nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
-//            nodes->at(new_path[i+1]).first - nodes->at(new_path[i]).first);
-//        new_angles[k-1] = atan2(
-//            nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
-//            nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
-//        new_angles[k] = atan2(
-//            nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
-//            nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
+        angle = atan2(
+            nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
+            nodes->at(new_path[i+1]).first - nodes->at(new_path[i]).first);
+        if (angle < 0) {
+          angle += 2*M_PI;
+        }
+        new_angles[i-1] = bin_angle(angle, 5);
+        angle = atan2(
+            nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
+            nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
+        if (angle < 0) {
+          angle += 2*M_PI;
+        }
+        new_angles[k-1] = bin_angle(angle, 5);
+        angle = atan2(
+            nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
+            nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
+        if (angle < 0) {
+          angle += 2*M_PI;
+        }
+        new_angles[k] = bin_angle(angle, 5);
 
-        double new_cost = get_dubins_path_cost(nodes, rho, new_path, new_angles);
+        double new_cost = 0.0;
+        for (size_t i = 1; i < new_path.size(); ++i){
+          new_cost += dubins_cost_mat[new_path[i-1]][new_path[i]][new_angles[i-1]][new_angles[i]];
+        }
         // Round it to avoid geting stuck in infinite looping due to machine rounding errors.
         new_cost = round( new_cost * 100000.0 ) / 100000.0;
 
-        if (new_cost < best_cost || logically_equal(new_cost, best_cost)) {
+        if (new_cost < best_cost) {
           tmp_path = new_path;
           tmp_angles = new_angles;
           start_again = true;
@@ -255,10 +293,11 @@ bool logically_equal(double a, double b, double error_factor) {
           error_factor;
 }
 
-std::pair<Vector<double_t>, double_t> straighten_path(
+std::pair<Vector<uint_fast32_t>, double_t> straighten_path(
+    Matrix<Matrix<double_t>>&dubins_cost_mat,
     const std::shared_ptr< const std::vector<Point2D>> nodes, double_t rho,
-    Path &path, Vector<double_t> &angles, double_t cost){
-  Vector<double_t> tmp_angles = angles;
+    Path &path, Vector<uint_fast32_t> &angles, double_t cost){
+  Vector<uint_fast32_t> tmp_angles = angles;
   double_t best_cost = cost;
   bool start_again = true;
   while(start_again) {
@@ -268,9 +307,15 @@ std::pair<Vector<double_t>, double_t> straighten_path(
           nodes->at(path[i+1]).second - nodes->at(path[i]).second,
           nodes->at(path[i+1]).first - nodes->at(path[i]).first
       );
-      double_t tmp_angle = tmp_angles[i];
-      tmp_angles[i] = new_angle;
-      double_t cost = get_dubins_path_cost(nodes, rho, path, tmp_angles);
+      if (new_angle< 0) {
+        new_angle += 2*M_PI;
+      }
+      uint_fast32_t tmp_angle = tmp_angles[i];
+      tmp_angles[i] = bin_angle(new_angle, 5);
+      double cost = 0.0;
+      for (size_t j = 1; j < path.size(); ++j){
+        cost += dubins_cost_mat[path[j-1]][path[j]][tmp_angles[j-1]][tmp_angles[j]];
+      }
       if (cost < best_cost) {
         best_cost = cost;
         start_again = true;

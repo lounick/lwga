@@ -26,7 +26,7 @@ namespace dcop_ga {
 class Chromosome {
  public:
   Path path;
-  Vector<double_t> angles;
+  Vector<uint_fast32_t> angles;
   std::shared_ptr<Vector<Point2D>> nodes;
   double_t rho;
   double_t fitness;
@@ -34,10 +34,13 @@ class Chromosome {
   std::unordered_set<uint_fast32_t> seen_vertices;
   std::vector<uint_fast32_t> all_vertices;
   std::vector<uint_fast32_t> free_vertices;
-  void calculate_cost();
-  void evaluate_chromosome(Matrix<double_t> &cost_mat,
+  void calculate_cost(Matrix<Matrix<double_t>>&dubins_cost_mat);
+  void evaluate_chromosome(Matrix<Matrix<double_t>>&dubins_cost_mat,
+                           Matrix<double_t> &cost_mat,
                            std::vector<double_t> &rewards);
-  void mutate(Matrix<double_t> &cost_mat,
+  void mutate(Matrix<Matrix<double_t>>&dubins_cost_mat,
+              Matrix<double_t> &cost_mat,
+              Vector<double_t> &std_angles,
               std::vector<double_t> &rewards,
               double_t max_cost,
               std::mt19937 &g);
@@ -54,6 +57,7 @@ Chromosome generate_chromosome(std::shared_ptr<Vector<Point2D>> nodes,
                                double_t max_cost,
                                uint_fast32_t idx_start,
                                uint_fast32_t idx_finish,
+                               Matrix<Matrix<double_t>>&dubins_cost_mat,
                                const Matrix<double_t> &cost_mat,
                                std::mt19937 &g);
 
@@ -63,19 +67,23 @@ Chromosome tournament_select(std::vector<Chromosome> &population,
 
 std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
                                      Chromosome &c2,
+                                     Matrix<Matrix<double_t>>&dubins_cost_mat,
                                      Matrix<double> &cost_mat,
                                      double max_cost,
                                      std::mt19937 &g);
 
 void par_mutate(std::vector<size_t> indices,
                 std::vector<Chromosome> &pop,
+                Matrix<Matrix<double_t>>&dubins_cost_mat,
                 Matrix<double> &cost_mat,
+                Vector<double_t> &std_angles,
                 std::vector<double> &rewards,
                 double &max_cost);
 
 Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    Vector<double_t> std_angles,
                    double_t rho,
+                   Matrix<Matrix<double_t>>&dubins_cost_mat,
                    Matrix<double_t> &cost_mat,
                    std::vector<double_t> &rewards,
                    double_t max_cost,
