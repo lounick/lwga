@@ -15,9 +15,10 @@ int main(int argc, char *argv[]){
   }
   nodes->push_back(std::make_pair(6, 0));
   Vector<double_t> std_angles;
-  std_angles.reserve(72);
-  for(uint_fast8_t i = 0; i < 72; ++i){
-    std_angles.push_back(i*5*M_PI/180.0);
+  uint_fast32_t degrees = 5;
+  std_angles.reserve(360/degrees);
+  for(uint_fast8_t i = 0; i < 360/degrees; ++i){
+    std_angles.push_back(i*degrees*M_PI/180.0);
   }
 //  Path path_before {0,3,7,12,13,8,2,6,11,17,18,23,26};
 //  Vector<double_t> angles_before = {
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]){
     }
   }
 
-  double rho = 0.5;
+  double rho = 0.1;
   Matrix<Matrix<double_t>> dubins_cost_mat;
   dubins_cost_mat.reserve(nodes->size());
   for (size_t i = 0; i < nodes->size(); ++i) {
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]){
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 100;
+  int nexp = 10;
 
   std::random_device rd;
   std::mt19937 g(rd());

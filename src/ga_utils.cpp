@@ -225,25 +225,24 @@ std::tuple<Path, Vector<uint_fast32_t >, double> dubins_two_opt(
         Vector<uint_fast32_t> new_angles;
         std::tie(new_path, new_angles) = two_opt_swap(tmp_path, angles, i, k);
         for (size_t idx = i; idx < k + 1; ++ idx) {
-          new_angles[idx] += M_PI;
-          if (new_angles[idx] >= 36){
-            new_angles[idx] -=36;
+          if (new_angles[idx] >= std_angles.size()/2){
+            new_angles[idx] -= std_angles.size()/2;
           } else {
-            new_angles[idx] +=36;
+            new_angles[idx] += std_angles.size()/2;
           }
         }
 
 //        for (size_t a_idx = 0; a_idx < new_angles.size(); ++a_idx) {
 //          normalise_angle(new_angles[a_idx]);
 //        }
-
+        uint_fast32_t degrees = 360/std_angles.size();
         double_t angle = atan2(
             nodes->at(new_path[i]).second - nodes->at(new_path[i-1]).second,
             nodes->at(new_path[i]).first - nodes->at(new_path[i-1]).first);
         if (angle < 0) {
           angle += 2*M_PI;
         }
-        new_angles[i-1] = bin_angle(angle, 5);
+        new_angles[i-1] = bin_angle(angle, degrees);
 
         angle = atan2(
             nodes->at(new_path[i+1]).second - nodes->at(new_path[i]).second,
@@ -251,21 +250,21 @@ std::tuple<Path, Vector<uint_fast32_t >, double> dubins_two_opt(
         if (angle < 0) {
           angle += 2*M_PI;
         }
-        new_angles[i-1] = bin_angle(angle, 5);
+        new_angles[i-1] = bin_angle(angle, degrees);
         angle = atan2(
             nodes->at(new_path[k]).second - nodes->at(new_path[k-1]).second,
             nodes->at(new_path[k]).first - nodes->at(new_path[k-1]).first);
         if (angle < 0) {
           angle += 2*M_PI;
         }
-        new_angles[k-1] = bin_angle(angle, 5);
+        new_angles[k-1] = bin_angle(angle, degrees);
         angle = atan2(
             nodes->at(new_path[k+1]).second - nodes->at(new_path[k]).second,
             nodes->at(new_path[k+1]).first - nodes->at(new_path[k]).first);
         if (angle < 0) {
           angle += 2*M_PI;
         }
-        new_angles[k] = bin_angle(angle, 5);
+        new_angles[k] = bin_angle(angle, degrees);
 
         double new_cost = 0.0;
         for (size_t i = 1; i < new_path.size(); ++i){

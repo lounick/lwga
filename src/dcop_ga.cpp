@@ -74,55 +74,109 @@ void Chromosome::mutate(
         Vector<uint_fast32_t> best_angles = mutated.angles;
         double_t best_fitness = mutated.fitness;
         uint_fast32_t best_vertex = rand_vertex;
-        uint_fast32_t prev_vertex = mutated.path[rand_vertex_idx - 1];
-        uint_fast32_t prev_angle = mutated.angles[rand_vertex_idx - 1];
-        uint_fast32_t next_vertex = mutated.path[rand_vertex_idx + 1];
-        uint_fast32_t next_angle = mutated.angles[rand_vertex_idx + 1];
-        double_t cost_removed = mutated.cost
-            - dubins_cost_mat[prev_vertex][rand_vertex][prev_angle][rand_angle]
-            - dubins_cost_mat[rand_vertex][next_vertex][rand_angle][next_angle];
+//        uint_fast32_t prev_vertex = mutated.path[rand_vertex_idx - 1];
+//        uint_fast32_t prev_angle = mutated.angles[rand_vertex_idx - 1];
+//        uint_fast32_t next_vertex = mutated.path[rand_vertex_idx + 1];
+//        uint_fast32_t next_angle = mutated.angles[rand_vertex_idx + 1];
+//        double_t cost_removed = mutated.cost
+//            - dubins_cost_mat[prev_vertex][rand_vertex][prev_angle][rand_angle]
+//            - dubins_cost_mat[rand_vertex][next_vertex][rand_angle][next_angle];
         for (uint_fast32_t i:available_vertices) {
           Chromosome tmp_c(mutated);
-//          tmp_c.path.reserve(cost_mat.size());
-//          tmp_c.path = mutated.path;
-//          tmp_c.angles.reserve(cost_mat.size());
-//          tmp_c.angles = mutated.angles;
-//          tmp_c.path.erase(tmp_c.path.begin() + rand_vertex_idx);
-//          tmp_c.path.insert(tmp_c.path.begin() + rand_vertex_idx, i);
           tmp_c.path[rand_vertex_idx] = i;
+          uint_fast32_t pa = tmp_c.angles[rand_vertex_idx-1];
+          uint_fast32_t na = tmp_c.angles[rand_vertex_idx+1];
           uint8_t angles_num = 5;
           Vector<uint_fast32_t> p_angles, n_angles;
           p_angles.reserve(angles_num);
           n_angles.reserve(angles_num);
           for (int32_t angle_cnt = -2; angle_cnt < 3; ++angle_cnt) {
-            if (int32_t(prev_angle) + angle_cnt < 0) {
-              p_angles.push_back(std_angles.size() + prev_angle + angle_cnt);
-            } else if (prev_angle + angle_cnt >= std_angles.size()) {
-              p_angles.push_back(prev_angle + angle_cnt - std_angles.size());
+            if (int32_t(pa) + angle_cnt < 0) {
+              p_angles.push_back(std_angles.size() + pa + angle_cnt);
+            } else if (pa + angle_cnt >= std_angles.size()) {
+              p_angles.push_back(pa + angle_cnt - std_angles.size());
             } else {
-              p_angles.push_back(prev_angle + angle_cnt);
+              p_angles.push_back(pa + angle_cnt);
             }
-            if (int32_t(next_angle) + angle_cnt < 0) {
-              n_angles.push_back(std_angles.size() + next_angle + angle_cnt);
-            } else if (next_angle + angle_cnt >= std_angles.size()) {
-              n_angles.push_back(next_angle + angle_cnt - std_angles.size());
+            if (int32_t(na) + angle_cnt < 0) {
+              n_angles.push_back(std_angles.size() + na + angle_cnt);
+            } else if (na + angle_cnt >= std_angles.size()) {
+              n_angles.push_back(na + angle_cnt - std_angles.size());
             } else {
-              n_angles.push_back(next_angle + angle_cnt);
+              n_angles.push_back(na + angle_cnt);
             }
           }
-          double_t best_cost_added = std::numeric_limits<double_t>::max();
           uint_fast32_t best_pa, best_a, best_na;
-          for (uint_fast32_t pa:p_angles) {
-            for (uint_fast32_t na:n_angles) {
+          double_t best_travel_increase = std::numeric_limits<double_t>::max();
+          if (rand_vertex_idx == 1) {
+            uint_fast32_t pv = tmp_c.path[rand_vertex_idx-1];
+            uint_fast32_t nv = tmp_c.path[rand_vertex_idx+1];
+            uint_fast32_t nnv = tmp_c.path[rand_vertex_idx+2];
+            uint_fast32_t nna = tmp_c.angles[rand_vertex_idx+2];
+//            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+            for (uint_fast32_t pa:p_angles) {
               for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
-                double_t cost_added =
-                    dubins_cost_mat[prev_vertex][i][pa][a]
-                        + dubins_cost_mat[i][next_vertex][a][na];
-                if (cost_added < best_cost_added) {
-                  best_cost_added = cost_added;
-                  best_pa = pa;
-                  best_na = na;
-                  best_a = a;
+//                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+                for (uint_fast32_t na:n_angles) {
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[pv][i][pa][a];
+                  travel_increase += dubins_cost_mat[i][nv][a][na];
+                  travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  if (travel_increase < best_travel_increase) {
+                    best_travel_increase = travel_increase;
+                    best_pa = pa;
+                    best_a = a;
+                    best_na = na;
+                  }
+                }
+              }
+            }
+          } else if (rand_vertex_idx == mutated.path.size()-2) {
+            uint_fast32_t ppv = tmp_c.path[rand_vertex_idx-2];
+            uint_fast32_t ppa = tmp_c.angles[rand_vertex_idx-2];
+            uint_fast32_t pv = tmp_c.path[rand_vertex_idx-1];
+            uint_fast32_t nv = tmp_c.path[rand_vertex_idx+1];
+//            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+            for (uint_fast32_t pa:p_angles) {
+              for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
+//                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+                for (uint_fast32_t na:n_angles) {
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  travel_increase += dubins_cost_mat[pv][i][pa][a];
+                  travel_increase += dubins_cost_mat[i][nv][a][na];
+                  if (travel_increase < best_travel_increase) {
+                    best_travel_increase = travel_increase;
+                    best_pa = pa;
+                    best_a = a;
+                    best_na = na;
+                  }
+                }
+              }
+            }
+          } else {
+            uint_fast32_t ppv = tmp_c.path[rand_vertex_idx-2];
+            uint_fast32_t ppa = tmp_c.angles[rand_vertex_idx-2];
+            uint_fast32_t pv = tmp_c.path[rand_vertex_idx-1];
+            uint_fast32_t nv = tmp_c.path[rand_vertex_idx+1];
+            uint_fast32_t nnv = tmp_c.path[rand_vertex_idx+2];
+            uint_fast32_t nna = tmp_c.angles[rand_vertex_idx+2];
+//            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+            for (uint_fast32_t pa:p_angles) {
+              for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
+//                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+                for (uint_fast32_t na:n_angles) {
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  travel_increase += dubins_cost_mat[pv][i][pa][a];
+                  travel_increase += dubins_cost_mat[i][nv][a][na];
+                  travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  if (travel_increase < best_travel_increase) {
+                    best_travel_increase = travel_increase;
+                    best_pa = pa;
+                    best_a = a;
+                    best_na = na;
+                  }
                 }
               }
             }
@@ -350,9 +404,10 @@ void Chromosome::mutate(
       }
     } else {
       //Remove
-      if (mutated.cost >= 0.9 * max_cost) {
+      if (mutated.cost >= 0.95 * max_cost) {
         size_t to_remove = 0;
         double min_loss = std::numeric_limits<double>::infinity();
+        uint_fast32_t best_pa, best_na;
         for (size_t i = 1; i < mutated.path.size() - 1; ++i) {
           uint_fast32_t v = mutated.path[i];
           uint_fast32_t a = mutated.angles[i];
@@ -360,9 +415,23 @@ void Chromosome::mutate(
           uint_fast32_t pa = mutated.angles[i-1];
           uint_fast32_t nv = mutated.path[i+1];
           uint_fast32_t na = mutated.angles[i+1];
-
-          double travel_decrease =dubins_cost_mat[pv][v][pa][a]
+          double travel_decrease = dubins_cost_mat[pv][v][pa][a]
               + dubins_cost_mat[v][nv][a][na] - dubins_cost_mat[pv][nv][pa][na];
+//          double travel_decrease = dubins_cost_mat[pv][v][pa][a]
+//              + dubins_cost_mat[v][nv][a][na];
+//          double_t  min_connection = std::numeric_limits<double_t>::max();
+//          uint_fast32_t best_connection_pa, best_connection_na;
+//          for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+//            for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+//              double_t connection = dubins_cost_mat[pv][nv][pa][na];
+//              if (connection < min_connection) {
+//                min_connection = connection;
+//                best_connection_na = na;
+//                best_connection_pa = pa;
+//              }
+//            }
+//          }
+//          travel_decrease -= dubins_cost_mat[pv][nv][best_connection_pa][best_connection_na];
           double loss = rewards[v];
           double extras = 0;
           for (size_t j = 0; j < free_vertices.size(); ++j) {
@@ -381,13 +450,18 @@ void Chromosome::mutate(
 
           if (loss <= min_loss) {
             min_loss = loss;
+//            best_pa = best_connection_pa;
+//            best_na = best_connection_na;
             to_remove = i;
           }
         }
         if (to_remove > 0) {
+//          mutated.angles[to_remove-1] = best_pa;
+//          mutated.angles[to_remove+1] = best_na;
           mutated.free_vertices.push_back(mutated.path[to_remove]);
           mutated.seen_vertices.erase(to_remove);
           mutated.path.erase(mutated.path.begin() + to_remove);
+          mutated.angles.erase(mutated.angles.begin() + to_remove);
           mutated.calculate_cost(dubins_cost_mat);
           mutated.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
         }
@@ -632,6 +706,37 @@ void par_mutate(std::vector<size_t> indices,
   for(size_t idx:indices)
     pop[idx].mutate(dubins_cost_mat, cost_mat, std_angles, rewards, max_cost, g);
 }
+
+std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
+                                     Chromosome &c2,
+                                     Matrix<Matrix<double_t>>&dubins_cost_mat,
+                                     Matrix<double> &cost_mat,
+                                     double max_cost,
+                                     std::mt19937 &g){
+
+  std::vector<int> intersection;
+  std::set_intersection(
+      c1.seen_vertices.begin(), c1.seen_vertices.end(),
+      c2.seen_vertices.begin(), c2.seen_vertices.end(),
+      std::back_inserter(intersection));
+  if (intersection.size() == 0) {
+    return std::make_pair(c1, c2);
+  } else {
+    Chromosome off1;
+    Chromosome off2;
+    off1.path.reserve(cost_mat.size());
+    off2.path.reserve(cost_mat.size());
+    //1. Choose random intersection point.
+    //2. Exchange paths.
+    //3. Remove duplicates and populate seen/free vertices.
+    //4. Connect first part of path with old angles.
+    //5. Find new angles for second part of path.
+    //6. Do 2-opt
+    //7. Check feasibility.
+    //8. Calculate cost and fitness.
+    //9. Return.
+  }
+};
 
 Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    Vector<double_t> std_angles,
