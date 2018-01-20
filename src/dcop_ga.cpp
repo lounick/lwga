@@ -54,9 +54,9 @@ void Chromosome::mutate(
           mutated.angles, mutated.cost);
   mutated.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
   for (uint_fast32_t iter = 0; iter < 10; ++iter){
-    if (std::generate_canonical<double, 10>(g) < 0.99) {
+    if (std::generate_canonical<double, 10>(g) < 0.9) {
       //Try to add
-      if (mutated.cost > 0.9*max_cost) {
+      if (mutated.cost > 0.95*max_cost) {
         std::uniform_int_distribution<> dis(1,mutated.path.size()-2);
         size_t rand_vertex_idx = dis(g);
         uint_fast32_t rand_vertex = mutated.path[rand_vertex_idx];
@@ -163,6 +163,190 @@ void Chromosome::mutate(
         // Try to add the neighbour before and after the vertex
         // If max cost is not violated
         // Choose addition with minimal cost increase
+        std::uniform_int_distribution<> dis(0, mutated.free_vertices.size() - 1);
+        size_t vertex_idx = dis(g);
+        uint_fast32_t vertex = mutated.free_vertices[vertex_idx];
+
+        double_t best_travel_increase = 0.0;
+        double_t best_removed_cost = 0.0;
+        double_t best_fitness = 0.0;
+        uint_fast32_t best_pa, best_a, best_na;
+        size_t ins_pos = 0;
+        for (size_t i = 1; i < mutated.path.size(); ++i) {
+          double_t travel_increase_pos = std::numeric_limits<double_t>::max();
+          uint_fast32_t best_pa_pos, best_a_pos, best_na_pos;
+          if (i == 1) {
+            uint_fast32_t pv = mutated.path[i-1];
+            uint_fast32_t nv = mutated.path[i];
+            uint_fast32_t nnv = mutated.path[i+1];
+            uint_fast32_t nna = mutated.angles[i+1];
+            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+              for (uint_fast32_t a = 0; a < std_angles.size(); ++a){
+                //TODO: Maybe consider a subset of angles
+                for (uint_fast32_t na = 0; na < std_angles.size(); ++na){
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[pv][vertex][pa][a];
+                  travel_increase += dubins_cost_mat[vertex][nv][a][na];
+                  travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  if (travel_increase < travel_increase_pos){
+                    travel_increase_pos = travel_increase;
+                    best_pa_pos = pa;
+                    best_a_pos = a;
+                    best_na_pos = na;
+                  }
+                }
+              }
+            }
+          } else if (i == mutated.path.size()-1) {
+            uint_fast32_t ppa = mutated.angles[i-2];
+            uint_fast32_t ppv = mutated.path[i-2];
+            uint_fast32_t pv = mutated.path[i-1];
+            uint_fast32_t nv = mutated.path[i];
+            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+              for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
+                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  travel_increase += dubins_cost_mat[pv][vertex][pa][a];
+                  travel_increase += dubins_cost_mat[vertex][nv][a][na];
+                  if (travel_increase < travel_increase_pos){
+                    travel_increase_pos = travel_increase;
+                    best_pa_pos = pa;
+                    best_a_pos = a;
+                    best_na_pos = na;
+                  }
+                }
+              }
+            }
+          } else {
+            uint_fast32_t ppa = mutated.angles[i-2];
+            uint_fast32_t nna = mutated.angles[i+1];
+            uint_fast32_t ppv = mutated.path[i-2];
+            uint_fast32_t pv = mutated.path[i-1];
+            uint_fast32_t nv = mutated.path[i];
+            uint_fast32_t nnv = mutated.path[i+1];
+            for (uint_fast32_t pa = 0; pa < std_angles.size(); ++pa) {
+              for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
+                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
+                  double_t travel_increase = 0.0;
+                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  travel_increase += dubins_cost_mat[pv][vertex][pa][a];
+                  travel_increase += dubins_cost_mat[vertex][nv][a][na];
+                  travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  if (travel_increase < travel_increase_pos){
+                    travel_increase_pos = travel_increase;
+                    best_pa_pos = pa;
+                    best_a_pos = a;
+                    best_na_pos = na;
+                  }
+                }
+              }
+            }
+          }
+
+          double fit = rewards[vertex]; //TODO: Should we add the extras to the fit?
+          if (travel_increase_pos != 0) {
+            fit /= travel_increase_pos;
+          }
+          else {
+            fit = std::numeric_limits<double>::infinity();
+          }
+          if(fit > best_fitness) {
+            double_t removed_cost = 0.0;
+            if (i == 1) {
+              uint_fast32_t pv = mutated.path[i-1];
+              uint_fast32_t pa = mutated.angles[i-1];
+              uint_fast32_t nv = mutated.path[i];
+              uint_fast32_t na = mutated.angles[i];
+              uint_fast32_t nnv = mutated.path[i+1];
+              uint_fast32_t nna = mutated.angles[i+1];
+              removed_cost += dubins_cost_mat[pv][nv][pa][na];
+              removed_cost += dubins_cost_mat[nv][nnv][na][nna];
+            } else if (i == mutated.path.size() - 1) {
+              uint_fast32_t ppv = mutated.path[i-2];
+              uint_fast32_t ppa = mutated.angles[i-2];
+              uint_fast32_t pv = mutated.path[i-1];
+              uint_fast32_t pa = mutated.angles[i-1];
+              uint_fast32_t nv = mutated.path[i];
+              uint_fast32_t na = mutated.angles[i];
+              removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              removed_cost += dubins_cost_mat[pv][nv][pa][na];
+            } else {
+              uint_fast32_t ppv = mutated.path[i-2];
+              uint_fast32_t ppa = mutated.angles[i-2];
+              uint_fast32_t pv = mutated.path[i-1];
+              uint_fast32_t pa = mutated.angles[i-1];
+              uint_fast32_t nv = mutated.path[i];
+              uint_fast32_t na = mutated.angles[i];
+              uint_fast32_t nnv = mutated.path[i+1];
+              uint_fast32_t nna = mutated.angles[i+1];
+              removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              removed_cost += dubins_cost_mat[pv][nv][pa][na];
+              removed_cost += dubins_cost_mat[nv][nnv][na][nna];
+            }
+            if (mutated.cost - removed_cost + travel_increase_pos <= max_cost) {
+              best_travel_increase = travel_increase_pos;
+              best_removed_cost = removed_cost;
+              best_fitness = fit;
+              best_pa = best_pa_pos;
+              best_a = best_a_pos;
+              best_na = best_na_pos;
+              ins_pos = i;
+            }
+          }
+        }
+        if (ins_pos > 0) {
+          /*if (ins_pos == 1) {
+            uint_fast32_t pv = mutated.path[ins_pos-1];
+            uint_fast32_t pa = mutated.angles[ins_pos-1];
+            uint_fast32_t nv = mutated.path[ins_pos];
+            uint_fast32_t na = mutated.angles[ins_pos];
+            uint_fast32_t nnv = mutated.path[ins_pos+1];
+            uint_fast32_t nna = mutated.angles[ins_pos+1];
+            mutated.cost -= dubins_cost_mat[pv][nv][pa][na];
+            mutated.cost -= dubins_cost_mat[nv][nnv][na][nna];
+            mutated.cost += dubins_cost_mat[pv][vertex][best_pa][best_a];
+            mutated.cost += dubins_cost_mat[vertex][nv][best_a][best_na];
+            mutated.cost += dubins_cost_mat[nv][nnv][best_na][nna];
+          } else if (ins_pos == mutated.path.size() - 1) {
+            uint_fast32_t ppv = mutated.path[ins_pos-2];
+            uint_fast32_t ppa = mutated.angles[ins_pos-2];
+            uint_fast32_t pv = mutated.path[ins_pos-1];
+            uint_fast32_t pa = mutated.angles[ins_pos-1];
+            uint_fast32_t nv = mutated.path[ins_pos];
+            uint_fast32_t na = mutated.angles[ins_pos];
+            mutated.cost -= dubins_cost_mat[ppv][pv][ppa][pa];
+            mutated.cost -= dubins_cost_mat[pv][nv][pa][na];
+            mutated.cost += dubins_cost_mat[ppv][pv][ppa][best_pa];
+            mutated.cost += dubins_cost_mat[pv][vertex][best_pa][best_a];
+            mutated.cost += dubins_cost_mat[vertex][nv][best_a][best_na];
+          } else {
+            uint_fast32_t ppv = mutated.path[ins_pos-2];
+            uint_fast32_t ppa = mutated.angles[ins_pos-2];
+            uint_fast32_t pv = mutated.path[ins_pos-1];
+            uint_fast32_t pa = mutated.angles[ins_pos-1];
+            uint_fast32_t nv = mutated.path[ins_pos];
+            uint_fast32_t na = mutated.angles[ins_pos];
+            uint_fast32_t nnv = mutated.path[ins_pos+1];
+            uint_fast32_t nna = mutated.angles[ins_pos+1];
+            mutated.cost -= dubins_cost_mat[ppv][pv][ppa][pa];
+            mutated.cost -= dubins_cost_mat[pv][nv][pa][na];
+            mutated.cost -= dubins_cost_mat[nv][nnv][na][nna];
+            mutated.cost += dubins_cost_mat[ppv][pv][ppa][best_pa];
+            mutated.cost += dubins_cost_mat[pv][vertex][best_pa][best_a];
+            mutated.cost += dubins_cost_mat[vertex][nv][best_a][best_na];
+            mutated.cost += dubins_cost_mat[nv][nnv][best_na][nna];
+          }*/
+          mutated.cost -= best_removed_cost;
+          mutated.cost += best_travel_increase;
+          mutated.angles[ins_pos-1] = best_pa;
+          mutated.angles[ins_pos] = best_na;
+          mutated.path.insert(mutated.path.begin() + ins_pos, vertex);
+          mutated.angles.insert(mutated.angles.begin() + ins_pos, best_a);
+          mutated.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
+          mutated.free_vertices.erase(mutated.free_vertices.begin() + vertex_idx);
+          mutated.seen_vertices.insert(vertex);
+        }
       }
     } else {
       //Remove
