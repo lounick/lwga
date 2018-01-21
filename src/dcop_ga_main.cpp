@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
     }
   }
 
-  double rho = 0.000001;
+  double rho = 0.5;
   Matrix<Matrix<double_t>> dubins_cost_mat;
   dubins_cost_mat.reserve(nodes->size());
   for (size_t i = 0; i < nodes->size(); ++i) {

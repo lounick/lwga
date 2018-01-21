@@ -65,14 +65,14 @@ Chromosome tournament_select(std::vector<Chromosome> &population,
                              uint_fast32_t tour_size,
                              std::mt19937 &g);
 
-std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
-                                     Chromosome &c2,
-                                     Matrix<Matrix<double_t>>&dubins_cost_mat,
-                                     Vector<double_t> &std_angles,
-                                     Matrix<double_t> &cost_mat,
-                                     Vector<double_t> &rewards,
-                                     double max_cost,
-                                     std::mt19937 &g);
+void cx(Chromosome &c1,
+        Chromosome &c2,
+        Matrix<Matrix<double_t>>&dubins_cost_mat,
+        Vector<double_t> &std_angles,
+        Matrix<double_t> &cost_mat,
+        Vector<double_t> &rewards,
+        double max_cost,
+        std::mt19937 &g);
 
 void par_cx(std::vector<size_t> indices,
             std::vector<Chromosome> &pop,
