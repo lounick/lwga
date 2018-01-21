@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
   }
   nodes->push_back(std::make_pair(6, 0));
   Vector<double_t> std_angles;
-  uint_fast32_t degrees = 5;
+  uint_fast32_t degrees = 20;
   std_angles.reserve(360/degrees);
   for(uint_fast8_t i = 0; i < 360/degrees; ++i){
     std_angles.push_back(i*degrees*M_PI/180.0);
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
     }
   }
 
-  double rho = 0.1;
+  double rho = 0.000001;
   Matrix<Matrix<double_t>> dubins_cost_mat;
   dubins_cost_mat.reserve(nodes->size());
   for (size_t i = 0; i < nodes->size(); ++i) {
@@ -106,11 +106,12 @@ int main(int argc, char *argv[]){
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 10;
+  int nexp = 100;
 
   std::random_device rd;
   std::mt19937 g(rd());
-
+  dcop_ga::Chromosome best;
+  double_t best_fitness = std::numeric_limits<double_t>::min();
   for (int exp = 0; exp < nexp; exp++) {
     std::cout << "Experiment: " << exp << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
@@ -183,7 +184,19 @@ int main(int argc, char *argv[]){
     }
     fitnesses.push_back(fitness);
     std::cout << fitness << std::endl;
+    if (fitness > best_fitness) {
+      best = c;
+      best_fitness = fitness;
+    }
   }
+  std::cout << "Best:" << std::endl;
+  print_path(best.path);
+  Vector<double_t> angles;
+  for (size_t i = 0; i < best.angles.size(); ++i) {
+    angles.push_back(std_angles[best.angles[i]]);
+  }
+  print_vector<double_t>(angles);
+  std::cout << best_fitness << std::endl;
   double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
   std::cout << "Average fitness: " << avg_fit << std::endl;
   double fit_var = 0.0;

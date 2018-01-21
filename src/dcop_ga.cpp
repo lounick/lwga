@@ -3,7 +3,7 @@
 //
 
 #include "dcop_ga.h"
-
+#include <cassert>
 namespace dcop_ga {
 
 void Chromosome::calculate_cost(Matrix<Matrix<double_t>>&dubins_cost_mat) {
@@ -710,33 +710,168 @@ void par_mutate(std::vector<size_t> indices,
 std::pair<Chromosome, Chromosome> cx(Chromosome &c1,
                                      Chromosome &c2,
                                      Matrix<Matrix<double_t>>&dubins_cost_mat,
+                                     Vector<double_t> &std_angles,
                                      Matrix<double> &cost_mat,
-                                     double max_cost,
-                                     std::mt19937 &g){
+                                     Vector<double_t> &rewards,
+                                     double_t max_cost,std::mt19937 &g){
 
   std::vector<int> intersection;
   std::set_intersection(
       c1.seen_vertices.begin(), c1.seen_vertices.end(),
       c2.seen_vertices.begin(), c2.seen_vertices.end(),
       std::back_inserter(intersection));
-  if (intersection.size() == 0) {
+  if (intersection.empty()) {
     return std::make_pair(c1, c2);
-  } else {
-    Chromosome off1;
-    Chromosome off2;
-    off1.path.reserve(cost_mat.size());
-    off2.path.reserve(cost_mat.size());
-    //1. Choose random intersection point.
-    //2. Exchange paths.
-    //3. Remove duplicates and populate seen/free vertices.
-    //4. Connect first part of path with old angles.
-    //5. Find new angles for second part of path.
-    //6. Do 2-opt
-    //7. Check feasibility.
-    //8. Calculate cost and fitness.
-    //9. Return.
   }
-};
+  Chromosome off1;
+  Chromosome off2;
+  off1.path.reserve(cost_mat.size());
+  off1.angles.reserve(cost_mat.size());
+  off2.path.reserve(cost_mat.size());
+  off2.angles.reserve(cost_mat.size());
+  off1.all_vertices = c1.all_vertices;
+  off2.all_vertices = c2.all_vertices;
+  off1.nodes = c1.nodes;
+  off2.nodes = c2.nodes;
+  off1.rho = c1.rho;
+  off2.rho = c2.rho;
+  //1. Choose random intersection point.
+  size_t rand_idx = g() % intersection.size();
+  //2. Exchange paths.
+  //3. Remove duplicates and populate seen/free vertices.
+  //4. Connect first part of path with old angles.
+  Vector<uint_fast32_t>::iterator idx1 = std::find(c1.path.begin(), c1.path.end(), intersection[rand_idx]);
+  Vector<uint_fast32_t>::iterator idx2 = std::find(c2.path.begin(), c2.path.end(), intersection[rand_idx]);
+  std::copy(c1.path.begin(), idx1, std::back_inserter(off1.path));
+  for (size_t i = 0; i < off1.path.size(); ++i) {
+    off1.angles.push_back(c1.angles[i]);
+  }
+  off1.seen_vertices =
+      std::unordered_set<uint_fast32_t> (off1.path.begin()+1, off1.path.end());
+  for(Vector<uint_fast32_t>::iterator it = idx2; it != c2.path.end(); ++it) {
+    std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> ret;
+    ret = off1.seen_vertices.insert(*it);
+    if (ret.second) {
+      off1.path.push_back(*it);
+    }
+  }
+  off1.free_vertices.reserve(cost_mat.size());
+  std::set_difference(
+      off1.all_vertices.begin(), off1.all_vertices.end(),
+      off1.seen_vertices.begin(), off1.seen_vertices.end(),
+      std::back_inserter(off1.free_vertices));
+  off1.free_vertices.erase(
+      std::find(off1.free_vertices.begin(), off1.free_vertices.end(), off1.path.front()));
+  off1.free_vertices.erase(
+      std::find(off1.free_vertices.begin(), off1.free_vertices.end(), off1.path.back()));
+
+  std::copy(c2.path.begin(), idx2, std::back_inserter(off2.path));
+  for (size_t i = 0; i < off2.path.size(); ++i) {
+    off2.angles.push_back(c2.angles[i]);
+  }
+  off2.seen_vertices =
+      std::unordered_set<uint_fast32_t> (off2.path.begin()+1, off2.path.end());
+  for(Vector<uint_fast32_t>::iterator it = idx1; it != c1.path.end(); ++it) {
+    std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> ret;
+    ret = off2.seen_vertices.insert(*it);
+    if (ret.second) {
+      off2.path.push_back(*it);
+    }
+  }
+  off2.free_vertices.reserve(cost_mat.size());
+  std::set_difference(
+      off2.all_vertices.begin(), off2.all_vertices.end(),
+      off2.seen_vertices.begin(), off2.seen_vertices.end(),
+      std::back_inserter(off2.free_vertices));
+  off2.free_vertices.erase(
+      std::find(off2.free_vertices.begin(), off2.free_vertices.end(), off2.path.front()));
+  off2.free_vertices.erase(
+      std::find(off2.free_vertices.begin(), off2.free_vertices.end(), off2.path.back()));
+
+  //5. Find new angles for second part of path.
+  idx1 = std::find(off1.path.begin(), off1.path.end(), intersection[rand_idx]);
+  idx2 = std::find(off2.path.begin(), off2.path.end(), intersection[rand_idx]);
+  uint_fast32_t pa;
+  uint_fast32_t best_a, best_na;
+  pa = off1.angles.back();
+  for (; idx1 < off1.path.end()-2; ++idx1){
+    double_t best_cost = std::numeric_limits<double_t>::max();
+    uint_fast32_t a, na, nna;
+    for (a = 0; a < std_angles.size(); ++a) {
+      for (na = 0; na < std_angles.size(); ++na) {
+        double_t cost = 0.0;
+        cost += dubins_cost_mat[*idx1][*(idx1+1)][pa][a];
+        cost += dubins_cost_mat[*(idx1+1)][*(idx1+2)][a][na];
+        if (cost < best_cost) {
+          best_cost = cost;
+          best_a = a;
+          best_na = na;
+        }
+      }
+    }
+    pa = best_a;
+    off1.angles.push_back(best_a);
+  }
+  off1.angles.push_back(best_na);
+
+  pa = off2.angles.back();
+  for (; idx2 < off2.path.end()-2; ++idx2){
+    double_t best_cost = std::numeric_limits<double_t>::max();
+    uint_fast32_t a, na, nna;
+    for (a = 0; a < std_angles.size(); ++a) {
+      for (na = 0; na < std_angles.size(); ++na) {
+        double_t cost = 0.0;
+        cost += dubins_cost_mat[*idx2][*(idx2+1)][pa][a];
+        cost += dubins_cost_mat[*(idx2+1)][*(idx2+2)][a][na];
+        if (cost < best_cost) {
+          best_cost = cost;
+          best_a = a;
+          best_na = na;
+        }
+      }
+    }
+    pa = best_a;
+    off2.angles.push_back(best_a);
+  }
+  off2.angles.push_back(best_na);
+  assert(off1.angles.size() == off1.path.size());
+  assert(off2.angles.size() == off2.path.size());
+  //6. Do 2-opt
+  off1.calculate_cost(dubins_cost_mat);
+  off2.calculate_cost(dubins_cost_mat);
+  std::tie(off1.path, off1.angles, off1.cost) = dubins_two_opt(
+      dubins_cost_mat, std_angles, off1.nodes, off1.rho, off1.path,
+      off1.angles, off1.cost);
+  std::tie(off2.path, off2.angles, off2.cost) = dubins_two_opt(
+      dubins_cost_mat, std_angles, off2.nodes, off2.rho, off2.path,
+      off2.angles, off2.cost);
+  //7. Check feasibility.
+  if (off1.cost > max_cost) {
+    off1 = c1;
+  }
+  if (off2.cost > max_cost) {
+    off2 = c2;
+  }
+  //8. Calculate cost and fitness.
+  off1.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
+  off2.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
+  //9. Return.
+  return std::make_pair(off1, off2);
+}
+
+void par_cx(std::vector<size_t> indices,
+            std::vector<Chromosome> &pop,
+            Matrix<Matrix<double_t>>&dubins_cost_mat,
+            Vector<double_t> &std_angles,
+            Matrix<double_t> &cost_mat,
+            std::vector<double_t> &rewards,
+            double_t max_cost) {
+  // Get hash of thread id for the seed of the generator.
+  std::hash<std::thread::id> hasher;
+  static thread_local std::mt19937 g(hasher(std::this_thread::get_id()));
+  for (size_t i = 0; i < indices.size(); i = i + 2)
+    cx(pop[indices[i]], pop[indices[i + 1]], dubins_cost_mat, std_angles, cost_mat, rewards, max_cost, g);
+}
 
 Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    Vector<double_t> std_angles,
@@ -757,9 +892,12 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
    * Select fittest
   */
 
-  uint_fast32_t pop_size = 200;
-  int tour_size = 3;
-  int max_gen = 75;
+//  uint_fast32_t pop_size = 200;
+//  int tour_size = 3;
+//  int max_gen = 50;
+  uint_fast32_t pop_size = 250;
+  int tour_size = 5;
+  int max_gen = 50;
 
   // Initialise population
   std::vector<Chromosome> pop;
@@ -782,22 +920,75 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
     // Select new populations
     std::vector<Chromosome> new_pop;
     new_pop.reserve(pop_size);
+    double_t elite_percent = 0.03;
+    uint_fast32_t num_elites = std::ceil(elite_percent * pop_size);
+    if (num_elites > 0) {
+      auto sortRuleLambda = [](const Chromosome &c1, const Chromosome &c2) -> bool {
+        return c1.fitness > c2.fitness;
+      };
+      std::sort(pop.begin(), pop.end(), sortRuleLambda);
+      for (uint_fast32_t e = 0; e < num_elites; ++e) {
+        new_pop.push_back(pop[e]);
+      }
+    }
 
-    for (uint_fast32_t i = 0; i < pop_size; ++i) {
+    for (uint_fast32_t i = 0; i < pop_size - num_elites; ++i) {
       new_pop.push_back(tournament_select(pop, tour_size, g));
     }
 
     // Cx
-//    for (int i = 0; i < 20; ++i) {
+//    for (int i = 0; i < std::floor(0.9*pop_size); ++i) {
 //      std::vector<size_t> indices = get_population_sample(new_pop.size(), 2, g);
-//      std::pair<Chromosome, Chromosome> cx_ret = cx(new_pop[indices[0]], new_pop[indices[1]], cost_mat, max_cost, g);
+//      std::pair<Chromosome, Chromosome> cx_ret =
+//          cx(new_pop[indices[0]], new_pop[indices[1]], dubins_cost_mat,
+//             std_angles, cost_mat, rewards, max_cost, g);
 //      new_pop[indices[0]] = cx_ret.first;
 //      new_pop[indices[1]] = cx_ret.second;
-//      new_pop[indices[0]].evaluate_chromosome(cost_mat, rewards);
-//      new_pop[indices[1]].evaluate_chromosome(cost_mat, rewards);
 //    }
+    double_t cx_rate = 0.9;
+    if (cx_rate != 0) {
+      int num_individuals = std::ceil(pop_size * cx_rate);
+      if (num_individuals % 2)
+        ++num_individuals;
+      std::vector<size_t> indices = get_population_sample(new_pop.size(), num_individuals, g);
+      uint_fast32_t M = 8; //number of cores
+      uint_fast32_t chunk_size = indices.size() / M;
+      if (chunk_size % 2)
+        --chunk_size;
+
+      std::vector<std::future<void> > future_v;
+      for (uint_fast32_t thread_count = 0; thread_count < M; ++thread_count) {
+        std::vector<size_t>
+            tmpv(indices.begin() + thread_count * chunk_size, indices.begin() + (thread_count + 1) * chunk_size);
+        future_v.push_back(std::async(std::launch::async,
+                                      par_cx,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(dubins_cost_mat),
+                                      std::ref(std_angles),
+                                      std::ref(cost_mat),
+                                      std::ref(rewards),
+                                      std::ref(max_cost)));
+      }
+      if (indices.size() > chunk_size*M){
+        std::vector<size_t> tmpv(indices.begin() + (M) * chunk_size, indices.end());
+        future_v.push_back(std::async(std::launch::async,
+                                      par_cx,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(dubins_cost_mat),
+                                      std::ref(std_angles),
+                                      std::ref(cost_mat),
+                                      std::ref(rewards),
+                                      std::ref(max_cost)));
+      }
+      for (auto &f: future_v) {
+        f.get();
+      }
+    }
     // Mutate
-    std::vector<size_t> indices = get_population_sample(new_pop.size(), 50, g);
+    std::vector<size_t> indices =
+        get_population_sample(new_pop.size(), std::floor(0.7*pop_size), g);
     uint_fast32_t M = 6; //number of cores
     uint_fast32_t chunk_size = indices.size()/M;
 
