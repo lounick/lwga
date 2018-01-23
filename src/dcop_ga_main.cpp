@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
   }
   nodes->push_back(std::make_pair(6, 0));
   Vector<double_t> std_angles;
-  uint_fast32_t degrees = 20;
+  uint_fast32_t degrees = 10;
   std_angles.reserve(360/degrees);
   for(uint_fast8_t i = 0; i < 360/degrees; ++i){
     std_angles.push_back(i*degrees*M_PI/180.0);
