@@ -81,5 +81,11 @@ target_link_libraries(icra18_ctop_miqp_compare pthread)
 add_executable(crs_tuner ${CTOP_TUNING})
 target_link_libraries(crs_tuner pthread)
 
-add_executable(dcop-ga src/dubins.cpp src/ga_utils.cpp src/dcop_ga.cpp src/dcop_ga_main.cpp)
+add_library(dcop-ga src/dubins.cpp src/ga_utils.cpp src/dcop_ga.cpp)
 target_link_libraries(dcop-ga pthread)
+
+add_executable(dubins-crs-tuner src/dcop_crs_tuner.cpp)
+target_link_libraries(dubins-crs-tuner dcop-ga)
+
+add_executable(dcop-ga-main  src/dcop_ga_main.cpp)
+target_link_libraries(dcop-ga-main dcop-ga)

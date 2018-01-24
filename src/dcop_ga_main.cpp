@@ -8,14 +8,14 @@
 int main(int argc, char *argv[]){
   std::shared_ptr<Vector<Point2D>> nodes = std::make_shared<Vector<Point2D>>();
   nodes->push_back(std::make_pair(0, 0));
-  for (int i = 1; i < 6; i++) {
-    for (int j = -2; j < 3; j++) {
+  for (int i = 1; i < 10; i++) {
+    for (int j = -4; j < 5; j++) {
       nodes->push_back(std::make_pair(i, j));
     }
   }
-  nodes->push_back(std::make_pair(6, 0));
+  nodes->push_back(std::make_pair(10, 0));
   Vector<double_t> std_angles;
-  uint_fast32_t degrees = 10;
+  uint_fast32_t degrees = 15;
   std_angles.reserve(360/degrees);
   for(uint_fast8_t i = 0; i < 360/degrees; ++i){
     std_angles.push_back(i*degrees*M_PI/180.0);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 100;
+  int nexp = 10;
 
   std::random_device rd;
   std::mt19937 g(rd());
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
         nodes, std_angles, rho, dubins_cost_mat,
-        eucledian_cost_mat, rewards, 26, 0, 26, g);
+        eucledian_cost_mat, rewards, 81.01, 0, 82, g);
 //    dcop_ga::Chromosome c = dcop_ga::generate_chromosome(
 //        nodes, std_angles, rho, 30,
 //        0, 26, eucledian_cost_mat, g);

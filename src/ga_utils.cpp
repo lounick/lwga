@@ -202,7 +202,7 @@ size_t bin_angle(double_t angle, double_t bin_size){
   double_t r = fmod(angle, bin_size);
   if (r > bin_size/2)
     ++d;
-  return d;
+  return d%int(360/bin_size);
 }
 
 std::tuple<Path, Vector<uint_fast32_t >, double> dubins_two_opt(
@@ -268,6 +268,8 @@ std::tuple<Path, Vector<uint_fast32_t >, double> dubins_two_opt(
 
         double new_cost = 0.0;
         for (size_t i = 1; i < new_path.size(); ++i){
+//          std::cout << new_path[i-1] << " " << new_path[i] << " " << new_angles[i-1] << " " << new_angles[i] << std::endl;
+//          std::cout << dubins_cost_mat.size() << " " << dubins_cost_mat[0].size() << " " << dubins_cost_mat[0][0].size() << " " << dubins_cost_mat[0][0][0].size() << std::endl;
           new_cost += dubins_cost_mat[new_path[i-1]][new_path[i]][new_angles[i-1]][new_angles[i]];
         }
         // Round it to avoid geting stuck in infinite looping due to machine rounding errors.
