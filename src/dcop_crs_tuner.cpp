@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-
 namespace dcop_ga {
 
 template<typename T>
@@ -30,19 +29,19 @@ using Games = std::vector<Game>;
 
 double_t tau = 0.5;
 
-double_t mu(double_t R){
-  return (R - 1500)/173.7178;
+double_t mu(double_t R) {
+  return (R - 1500) / 173.7178;
 }
 
-double_t phi(double_t RD){
-  return RD/173.7178;
+double_t phi(double_t RD) {
+  return RD / 173.7178;
 }
 
-double_t g(double_t phi){
+double_t g(double_t phi) {
   return 1 / std::sqrt(1 + (3 * (std::pow(phi, 2.0) / std::pow(M_PI, 2.0))));
 }
 
-double_t E(double_t mu, double_t mui, double phii){
+double_t E(double_t mu, double_t mui, double phii) {
   return 1 / (1 + pow(10, -g(phii) * (mu - mui)));
 }
 
@@ -104,7 +103,7 @@ class Configuration {
   }
   inline uint_fast8_t num_gen() const { return num_gen_; }
   inline void num_gen(uint_fast8_t num_gen) {
-    if(num_gen > num_gen_lim_.max)
+    if (num_gen > num_gen_lim_.max)
       num_gen_ = num_gen_lim_.max;
     else if (num_gen < num_gen_lim_.min)
       num_gen_ = num_gen_lim_.min;
@@ -113,7 +112,7 @@ class Configuration {
   }
   inline uint_fast8_t tour_size() const { return tour_size_; }
   inline void tour_size(uint_fast8_t tour_size) {
-    if(tour_size > tour_size_lim_.max)
+    if (tour_size > tour_size_lim_.max)
       tour_size_ = tour_size_lim_.max;
     else if (tour_size < tour_size_lim_.min)
       tour_size_ = tour_size_lim_.min;
@@ -187,16 +186,17 @@ class Configuration {
       double_t mui = mu(games_[game].opponent_rating);
       double_t phii = phi(games_[game].opponent_rating_deviation);
       double_t E_ = E(mu_, mui, phii);
-      v += std::pow(g(phii),2)* E_ * (1-E_);
+      v += std::pow(g(phii), 2) * E_ * (1 - E_);
     }
-    v = 1/v;
+    v = 1 / v;
     double_t perfFromGames = 0.0;
     for (size_t game = 0; game < games_.size(); ++game) {
       double_t mui = mu(games_[game].opponent_rating);
       double_t phii = phi(games_[game].opponent_rating_deviation);
       double_t E_ = E(mu_, mui, phii);
       for (size_t prob = 0; prob < games_[game].results.size(); ++prob) {
-        for(size_t iter = 0; iter < games_[game].results[prob].size(); ++iter) {
+        for (size_t iter = 0; iter < games_[game].results[prob].size();
+             ++iter) {
           perfFromGames += g(phii) * (games_[game].results[prob][iter] - E_);
         }
       }
@@ -212,37 +212,38 @@ class Configuration {
     double_t t2 = std::pow(tau, 2);
     auto f = [delta2, phi2, v, a, t2](double_t x) {
       return std::exp(x) * ((delta2 - phi2 - v - std::exp(x)) /
-          (2 * std::pow(phi2 + v + std::exp(x),2))) - (x - a)/t2;};
+          (2 * std::pow(phi2 + v + std::exp(x), 2))) - (x - a) / t2;
+    };
     if (delta2 > phi2 + v)
       B = std::log(delta2 - phi2 - v);
     else {
       uint_fast32_t k = 1;
-      while(f(a - k * tau) < 0)
+      while (f(a - k * tau) < 0)
         ++k;
       B = a - k * tau;
     }
     double_t fa = f(A);
     double_t fb = f(B);
     double_t eps = 0.0000001;
-    while (std::abs(B - A) > eps){
-      double_t C = A + (A - B)*fa/(fb - fa);
+    while (std::abs(B - A) > eps) {
+      double_t C = A + (A - B) * fa / (fb - fa);
       double_t fc = f(C);
-      if (fc*fb < 0) {
+      if (fc * fb < 0) {
         A = B;
         fa = fb;
       } else {
-        fa = fa/2;
+        fa = fa / 2;
       }
       B = C;
       fb = fc;
     }
 
-    double_t sigma_prime = std::exp(A/2);
+    double_t sigma_prime = std::exp(A / 2);
     double_t phi_star = std::sqrt(phi2 + std::pow(sigma_prime, 2));
-    double_t phi_prime = 1 / std::sqrt(1/std::pow(phi_star,2) + 1/v);
+    double_t phi_prime = 1 / std::sqrt(1 / std::pow(phi_star, 2) + 1 / v);
     double_t mu_prime = 0.0;
 
-    mu_prime = mu_ + phi_prime*perfFromGames;
+    mu_prime = mu_ + phi_prime * perfFromGames;
     double_t R_prime = 173.7178 * mu_prime + 1500;
     double_t RD_prime = 173.7178 * phi_prime;
     if (RD_prime < 50)
@@ -284,9 +285,11 @@ using Configurations = std::vector<Configuration>;
 struct Problem {
   std::shared_ptr<Vector<Point2D>> nodes;
   Matrix<Matrix<double_t>> dubins_cost_mat;
+  Vector<double_t> std_angles;
   Matrix<double_t> cost_mat;
   std::vector<double_t> rewards;
-  std::vector<double_t> max_cost;
+  double_t max_cost;
+  double_t rho;
 };
 
 using Problems = std::vector<Problem>;
@@ -302,39 +305,40 @@ Configurations generatePopulation(uint_fast8_t pop_size,
                                   std::mt19937 &g) {
   std::vector<uint_fast16_t> pop_classes;
   pop_classes.reserve(20);
-  uint_fast16_t pop_chunk = (pop_size_lim.max - pop_size_lim.min)/19;
-  for(uint8_t cnt = 0; cnt < 20; ++cnt){
+  uint_fast16_t pop_chunk = (pop_size_lim.max - pop_size_lim.min) / 19;
+  for (uint8_t cnt = 0; cnt < 20; ++cnt) {
     pop_classes.push_back(pop_size_lim.min + cnt * pop_chunk);
   }
   std::vector<uint8_t> num_gen_classes;
   num_gen_classes.reserve(10);
-  uint8_t num_gen_chunk = (num_generations_lim.max - num_generations_lim.min)/9;
-  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+  uint8_t
+      num_gen_chunk = (num_generations_lim.max - num_generations_lim.min) / 9;
+  for (uint8_t cnt = 0; cnt < 10; ++cnt) {
     num_gen_classes.push_back(num_generations_lim.min + cnt * num_gen_chunk);
   }
   std::vector<double_t> cx_classes;
   cx_classes.reserve(11);
-  double_t cx_chunk = (cx_rate_lim.max - cx_rate_lim.min)/9.0;
-  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+  double_t cx_chunk = (cx_rate_lim.max - cx_rate_lim.min) / 9.0;
+  for (uint8_t cnt = 0; cnt < 10; ++cnt) {
     cx_classes.push_back(cx_rate_lim.min + cnt * cx_chunk);
   }
   std::vector<double_t> mut_classes;
   mut_classes.reserve(11);
-  double_t mut_chunk = (mut_rate_lim.max - mut_rate_lim.min)/9.0;
-  for(uint8_t cnt = 0; cnt < 10; ++cnt){
+  double_t mut_chunk = (mut_rate_lim.max - mut_rate_lim.min) / 9.0;
+  for (uint8_t cnt = 0; cnt < 10; ++cnt) {
     mut_classes.push_back(mut_rate_lim.min + cnt * mut_chunk);
   }
 
   std::vector<double_t> elite_classes;
   elite_classes.reserve(20);
-  double_t elite_chunk = (elitist_rate_lim.max - elitist_rate_lim.min)/19.0;
-  for (uint8_t cnt = 0; cnt < 20; ++cnt){
+  double_t elite_chunk = (elitist_rate_lim.max - elitist_rate_lim.min) / 19.0;
+  for (uint8_t cnt = 0; cnt < 20; ++cnt) {
     elite_classes.push_back(elitist_rate_lim.min + cnt * elite_chunk);
   }
 
-  std::uniform_int_distribution<size_t> dis10(0,9);
-  std::uniform_int_distribution<size_t> dis11(0,10);
-  std::uniform_int_distribution<size_t> dis20(0,19);
+  std::uniform_int_distribution<size_t> dis10(0, 9);
+  std::uniform_int_distribution<size_t> dis11(0, 10);
+  std::uniform_int_distribution<size_t> dis20(0, 19);
 
   std::uniform_int_distribution<uint_fast16_t>
       pop_size_dis(pop_size_lim.min, pop_size_lim.max);
@@ -370,51 +374,256 @@ Configurations generatePopulation(uint_fast8_t pop_size,
 }
 
 Problems generateProblems() {
- //TODO: Generate the problems
+  Problems probs;
+  Vector<double_t> rho_v = {0.0000000000001, 0.25, 0.5, 0.75, 1.0};
+  Vector<double_t> budget_percent = {0.75, 0.5};
+  Vector<double_t> std_angles;
+  uint_fast32_t degrees = 15;
+  std_angles.reserve(360 / degrees);
+  for (uint_fast8_t i = 0; i < 360 / degrees; ++i) {
+    std_angles.push_back(i * degrees * M_PI / 180.0);
+  }
+  // Generate 5x5
+  std::shared_ptr<Vector<Point2D>>
+      nodes5x5 = std::make_shared<Vector<Point2D>>();
+  nodes5x5->push_back(std::make_pair(0, 0));
+  for (int i = 1; i < 6; i++) {
+    for (int j = -2; j < 3; j++) {
+      nodes5x5->push_back(std::make_pair(i, j));
+    }
+  }
+  nodes5x5->push_back(std::make_pair(6, 0));
+  double_t max_cost_5x5 = 26.01;
+  Matrix<double_t> eucledian_cost_mat_5x5;
+  for (size_t i = 0; i < nodes5x5->size(); i++) {
+    std::vector<double_t> tmp_vec;
+    tmp_vec.reserve(nodes5x5->size());
+    eucledian_cost_mat_5x5.push_back(tmp_vec);
+  }
+
+  for (size_t i = 0; i < nodes5x5->size(); i++) {
+    eucledian_cost_mat_5x5[i].push_back(0);
+    for (size_t j = i + 1; j < nodes5x5->size(); j++) {
+      double dist = find_distance(nodes5x5->at(i), nodes5x5->at(j));
+      eucledian_cost_mat_5x5[i].push_back(dist);
+      eucledian_cost_mat_5x5[j].push_back(dist);
+    }
+  }
+  Vector<double_t> rewards5x5(eucledian_cost_mat_5x5.size(), 1);
+  rewards5x5.front() = 0;
+  rewards5x5.back() = 0;
+  for (double_t bp:budget_percent) {
+    for (double_t rho:rho_v) {
+      Matrix<Matrix<double_t>> dubins_cost_mat;
+      dubins_cost_mat.reserve(nodes5x5->size());
+      for (size_t i = 0; i < nodes5x5->size(); ++i) {
+        Vector<Matrix<double_t>> tmp_vec;
+        tmp_vec.reserve(nodes5x5->size());
+        for (size_t j = 0; j < nodes5x5->size(); ++j) {
+          Matrix<double_t> angle_mat;
+          angle_mat.reserve(std_angles.size());
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            Vector<double_t> angle_vec;
+            angle_vec.reserve(std_angles.size());
+            angle_mat.push_back(angle_vec);
+          }
+          tmp_vec.push_back(angle_mat);
+        }
+        dubins_cost_mat.push_back(tmp_vec);
+      }
+
+      for (size_t i = 0; i < nodes5x5->size(); i++) {
+        double_t q0[3] = {nodes5x5->at(i).first, nodes5x5->at(i).second, 0};
+        std::unique_ptr<DubinsPath> ptp_path = std::make_unique<DubinsPath>();
+        for (size_t j = 0; j < nodes5x5->size(); j++) {
+          double_t q1[3] = {nodes5x5->at(j).first, nodes5x5->at(j).second, 0};
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            q0[2] = std_angles[k];
+            for (size_t l = 0; l < std_angles.size(); ++l) {
+              q1[2] = std_angles[l];
+              int ret = dubins_init(q0, q1, rho, ptp_path.get());
+              if (ret != 0)
+                std::cout << "Dubins ret: " << ret << std::endl;
+              dubins_cost_mat[i][j][k].push_back(dubins_path_length(ptp_path.get()));
+            }
+          }
+        }
+      }
+      Problem p;
+      p.nodes = nodes5x5;
+      p.cost_mat = eucledian_cost_mat_5x5;
+      p.rewards = rewards5x5;
+      p.std_angles = std_angles;
+      p.max_cost = bp * max_cost_5x5;
+      p.dubins_cost_mat = dubins_cost_mat;
+      p.rho = rho;
+      probs.push_back(p);
+    }
+  }
+  // Generate 7x7
+  std::shared_ptr<Vector<Point2D>>
+      nodes7x7 = std::make_shared<Vector<Point2D>>();
+  nodes7x7->push_back(std::make_pair(0, 0));
+  for (int i = 1; i < 8; i++) {
+    for (int j = -3; j < 4; j++) {
+      nodes7x7->push_back(std::make_pair(i, j));
+    }
+  }
+  nodes7x7->push_back(std::make_pair(8, 0));
+  double_t max_cost_7x7 = 50.85;
+  Matrix<double_t> eucledian_cost_mat_7x7;
+  for (size_t i = 0; i < nodes7x7->size(); i++) {
+    std::vector<double_t> tmp_vec;
+    tmp_vec.reserve(nodes7x7->size());
+    eucledian_cost_mat_7x7.push_back(tmp_vec);
+  }
+
+  for (size_t i = 0; i < nodes7x7->size(); i++) {
+    eucledian_cost_mat_7x7[i].push_back(0);
+    for (size_t j = i + 1; j < nodes7x7->size(); j++) {
+      double dist = find_distance(nodes7x7->at(i), nodes7x7->at(j));
+      eucledian_cost_mat_7x7[i].push_back(dist);
+      eucledian_cost_mat_7x7[j].push_back(dist);
+    }
+  }
+  Vector<double_t> rewards7x7(eucledian_cost_mat_7x7.size(), 1);
+  rewards7x7.front() = 0;
+  rewards7x7.back() = 0;
+  for (double_t bp:budget_percent) {
+    for (double_t rho:rho_v) {
+      Matrix<Matrix<double_t>> dubins_cost_mat;
+      dubins_cost_mat.reserve(nodes7x7->size());
+      for (size_t i = 0; i < nodes7x7->size(); ++i) {
+        Vector<Matrix<double_t>> tmp_vec;
+        tmp_vec.reserve(nodes7x7->size());
+        for (size_t j = 0; j < nodes7x7->size(); ++j) {
+          Matrix<double_t> angle_mat;
+          angle_mat.reserve(std_angles.size());
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            Vector<double_t> angle_vec;
+            angle_vec.reserve(std_angles.size());
+            angle_mat.push_back(angle_vec);
+          }
+          tmp_vec.push_back(angle_mat);
+        }
+        dubins_cost_mat.push_back(tmp_vec);
+      }
+
+      for (size_t i = 0; i < nodes7x7->size(); i++) {
+        double_t q0[3] = {nodes7x7->at(i).first, nodes7x7->at(i).second, 0};
+        std::unique_ptr<DubinsPath> ptp_path = std::make_unique<DubinsPath>();
+        for (size_t j = 0; j < nodes7x7->size(); j++) {
+          double_t q1[3] = {nodes7x7->at(j).first, nodes7x7->at(j).second, 0};
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            q0[2] = std_angles[k];
+            for (size_t l = 0; l < std_angles.size(); ++l) {
+              q1[2] = std_angles[l];
+              int ret = dubins_init(q0, q1, rho, ptp_path.get());
+              if (ret != 0)
+                std::cout << "Dubins ret: " << ret << std::endl;
+              dubins_cost_mat[i][j][k].push_back(dubins_path_length(ptp_path.get()));
+            }
+          }
+        }
+      }
+      Problem p;
+      p.nodes = nodes7x7;
+      p.cost_mat = eucledian_cost_mat_7x7;
+      p.rewards = rewards7x7;
+      p.std_angles = std_angles;
+      p.max_cost = bp * max_cost_7x7;
+      p.dubins_cost_mat = dubins_cost_mat;
+      p.rho = rho;
+      probs.push_back(p);
+    }
+  }
+  // Generate 9x9
+  std::shared_ptr<Vector<Point2D>>
+      nodes9x9 = std::make_shared<Vector<Point2D>>();
+  nodes9x9->push_back(std::make_pair(0, 0));
+  for (int i = 1; i < 10; i++) {
+    for (int j = -4; j < 5; j++) {
+      nodes9x9->push_back(std::make_pair(i, j));
+    }
+  }
+  nodes9x9->push_back(std::make_pair(10, 0));
+  double_t max_cost_9x9 = 82.01;
+  Matrix<double_t> eucledian_cost_mat_9x9;
+  for (size_t i = 0; i < nodes9x9->size(); i++) {
+    std::vector<double_t> tmp_vec;
+    tmp_vec.reserve(nodes9x9->size());
+    eucledian_cost_mat_9x9.push_back(tmp_vec);
+  }
+
+  for (size_t i = 0; i < nodes9x9->size(); i++) {
+    eucledian_cost_mat_9x9[i].push_back(0);
+    for (size_t j = i + 1; j < nodes9x9->size(); j++) {
+      double dist = find_distance(nodes9x9->at(i), nodes9x9->at(j));
+      eucledian_cost_mat_9x9[i].push_back(dist);
+      eucledian_cost_mat_9x9[j].push_back(dist);
+    }
+  }
+  Vector<double_t> rewards9x9(eucledian_cost_mat_9x9.size(), 1);
+  rewards9x9.front() = 0;
+  rewards9x9.back() = 0;
+  for (double_t bp:budget_percent) {
+    for (double_t rho:rho_v) {
+      Matrix<Matrix<double_t>> dubins_cost_mat;
+      dubins_cost_mat.reserve(nodes9x9->size());
+      for (size_t i = 0; i < nodes9x9->size(); ++i) {
+        Vector<Matrix<double_t>> tmp_vec;
+        tmp_vec.reserve(nodes9x9->size());
+        for (size_t j = 0; j < nodes9x9->size(); ++j) {
+          Matrix<double_t> angle_mat;
+          angle_mat.reserve(std_angles.size());
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            Vector<double_t> angle_vec;
+            angle_vec.reserve(std_angles.size());
+            angle_mat.push_back(angle_vec);
+          }
+          tmp_vec.push_back(angle_mat);
+        }
+        dubins_cost_mat.push_back(tmp_vec);
+      }
+
+      for (size_t i = 0; i < nodes9x9->size(); i++) {
+        double_t q0[3] = {nodes9x9->at(i).first, nodes9x9->at(i).second, 0};
+        std::unique_ptr<DubinsPath> ptp_path = std::make_unique<DubinsPath>();
+        for (size_t j = 0; j < nodes9x9->size(); j++) {
+          double_t q1[3] = {nodes9x9->at(j).first, nodes9x9->at(j).second, 0};
+          for (size_t k = 0; k < std_angles.size(); ++k) {
+            q0[2] = std_angles[k];
+            for (size_t l = 0; l < std_angles.size(); ++l) {
+              q1[2] = std_angles[l];
+              int ret = dubins_init(q0, q1, rho, ptp_path.get());
+              if (ret != 0)
+                std::cout << "Dubins ret: " << ret << std::endl;
+              dubins_cost_mat[i][j][k].push_back(dubins_path_length(ptp_path.get()));
+            }
+          }
+        }
+      }
+      Problem p;
+      p.nodes = nodes9x9;
+      p.cost_mat = eucledian_cost_mat_9x9;
+      p.rewards = rewards9x9;
+      p.std_angles = std_angles;
+      p.max_cost = bp * max_cost_9x9;
+      p.dubins_cost_mat = dubins_cost_mat;
+      p.rho = rho;
+      probs.push_back(p);
+    }
+  }
+  return probs;
 }
 
 double_t evaluateChromosome(
-    //TODO: Fix me to work with the correct chromosome.
-    Chromosome &c, Matrix<double_t> &cost_mat, Vector<double_t> &rewards,
-    Vector<double_t> &max_cost_v) {
-  c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
-  std::unordered_set<uint_fast32_t> seen;
-  for (uint_fast32_t robot = 0; robot < max_cost_v.size(); ++robot) {
-    for (unsigned long path_idx : c.genes[robot].path) {
-      seen.insert(path_idx);
-    }
-  }
-
-  double fitness = 0;
-  std::vector<uint_fast32_t> vertices(cost_mat.size());
-  std::iota(vertices.begin(), vertices.end(), 0);
-  std::vector<uint_fast32_t> free_vertices;
-  std::vector<uint_fast32_t> visited_vertices(seen.begin(), seen.end());
-  std::sort(visited_vertices.begin(), visited_vertices.end());
-  std::set_difference(vertices.begin(),
-                      vertices.end(),
-                      visited_vertices.begin(),
-                      visited_vertices.end(),
-                      std::back_inserter(free_vertices));
-
-  seen.clear();
-  std::pair<std::unordered_set<uint_fast32_t>::iterator, bool> insert_ret;
-  for (uint_fast32_t robot = 0; robot < max_cost_v.size(); ++robot) {
-    for (size_t i = 1; i < c.genes[robot].path.size() - 1; i++) {
-      double extras = 0;
-      insert_ret = seen.insert(c.genes[robot].path[i]);
-      if (insert_ret.second) {
-        for (size_t j = 0; j < free_vertices.size(); j++) {
-          if (cost_mat[c.genes[robot].path[i]][free_vertices[j]] < 2) {
-            extras += std::exp((log(0.01) / 2)
-                                   * cost_mat[c.genes[robot].path[i]][free_vertices[j]]);
-          }
-        }
-        fitness += rewards[c.genes[robot].path[i]] + extras;
-      }
-    }
-  }
-  return fitness;
+    //TODO: Check if correct
+    Chromosome &c, Matrix<Matrix<double_t>> dubins_cost_mat,
+    Matrix<double_t> &cost_mat, Vector<double_t> &rewards) {
+  c.calculate_cost(dubins_cost_mat);
+  c.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
+  return std::cbrt(c.fitness * c.cost);
 }
 
 void cx(
@@ -558,45 +767,42 @@ int main(int argc, char *argv[]) {
   uint8_t max_exp = 5;//10;
   uint8_t max_runs = 10;//25;
   double_t MPS = pop_size / 2;
-  std::vector<std::string> methods = {"RANDOM", "NNGRASP"};
-  for (auto &method: methods) {
-    std::cout << method << std::endl;
-    for (uint8_t exp = 0; exp < max_exp; ++exp) {
-      for (size_t config = 0; config < C.size(); ++config) {
-        C[config].initResults(P.size(), max_runs);
-        std::cout << "Configuration[" << std::setfill('0') << std::setw(3)
-                  << config << "]: [" << unsigned(C[config].num_gen()) << ", "
-                  << unsigned(C[config].pop_size()) << ", "
-                  << unsigned(C[config].tour_size()) << ", "
-                  << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
-                  << C[config].elitist_rate() << "]" << std::endl;
-        for (size_t prob = 0; prob < P.size(); ++prob) {
-          for (uint8_t run = 0; run < max_runs; ++run) {
+  for (uint8_t exp = 0; exp < max_exp; ++exp) {
+    std::cout << "EXP: " << exp << std::endl;
+    for (size_t config = 0; config < C.size(); ++config) {
+      C[config].initResults(P.size(), max_runs);
+      std::cout << "Configuration[" << std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+                << unsigned(C[config].pop_size()) << ", "
+                << unsigned(C[config].tour_size()) << ", "
+                << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+                << C[config].elitist_rate() << "]" << std::endl;
+      for (size_t prob = 0; prob < P.size(); ++prob) {
+        for (uint8_t run = 0; run < max_runs; ++run) {
 //          std::cout << "Running configuration " << std::setfill('0')
 //                    << std::setw(3) << config << ", problem "
 //                    << std::setfill('0') << std::setw(3) << prob
 //                    << ", run " << std::setfill('0') << std::setw(3)
 //                    << unsigned(run) << std::endl;
-            Chromosome c;
-            double_t result;
-            auto start = std::chrono::high_resolution_clock::now();
-            //TODO: Fix the call to ga_dcop (both here and in the lib)
-//            c = ga_dcop(
-//                P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
-//                0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
-//                C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),
-//                C[config].mut_rate(), "NNGRASP", C[config].elitist_rate()
-//            );
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double> diff = end - start;
-            //TODO: Fix call to evaluateChromosome.
-//            result = evaluateChromosome(
-//                c, P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v);
-            C[config].results(prob, run, result);
-            C[config].time_results(prob, run, diff.count());
-          }
+          Chromosome c;
+          double_t result;
+          auto start = std::chrono::high_resolution_clock::now();
+          c = ga_dcop(
+              P[prob].nodes, P[prob].std_angles, P[prob].rho,
+              P[prob].dubins_cost_mat, P[prob].cost_mat, P[prob].rewards,
+              P[prob].max_cost, 0, P[prob].cost_mat.size() - 1,
+              C[config].pop_size(), C[config].num_gen(),
+              C[config].tour_size(), C[config].cx_rate(),
+              C[config].mut_rate(), C[config].elitist_rate(), g);
+          auto end = std::chrono::high_resolution_clock::now();
+          std::chrono::duration<double> diff = end - start;
+          result = evaluateChromosome(
+              c, P[prob].dubins_cost_mat, P[prob].cost_mat, P[prob].rewards);
+          C[config].results(prob, run, result);
+          C[config].time_results(prob, run, diff.count());
         }
       }
+    }
 
 //    for (size_t config = 0; config < C.size(); ++config) {
 //      char comma[3] = {'\0', ' ', '\0'};
@@ -613,31 +819,31 @@ int main(int argc, char *argv[]) {
 //      }
 //    }
 
-      for (size_t config = 0; config < C.size(); ++config) {
-        C[config].initGames(C.size() - 1);
-      }
-      std::cout << "initialised games" << std::endl;
-      for (size_t config1 = 0; config1 < C.size(); ++config1) {
-        for (size_t config2 = config1 + 1; config2 < C.size(); ++config2) {
-          Game g1, g2;
-          g1.opponent_rating = C[config2].rating();
-          g1.opponent_rating_deviation = C[config2].rating_deviation();
-          g1.opponent_rating_interval = C[config2].rating_interval();
-          g1.results.reserve(P.size());
-          g2.opponent_rating = C[config1].rating();
-          g2.opponent_rating_deviation = C[config1].rating_deviation();
-          g2.opponent_rating_interval = C[config1].rating_interval();
-          g2.results.reserve(P.size());
-          for (size_t prob = 0; prob < P.size(); ++prob) {
-            Vector<double_t> p_results_1, p_results_2;
-            p_results_1.reserve(max_runs);
-            p_results_2.reserve(max_runs);
-            for (uint8_t run = 0; run < max_runs; ++run) {
-              double_t p1_res = C[config1].results(prob, run);
-              double_t p2_res = C[config2].results(prob, run);
-              double_t p1_time = C[config1].time_results(prob, run);
-              double_t p2_time = C[config2].time_results(prob, run);
-              double_t timediff = p1_time - p2_time;
+    for (size_t config = 0; config < C.size(); ++config) {
+      C[config].initGames(C.size() - 1);
+    }
+    std::cout << "initialised games" << std::endl;
+    for (size_t config1 = 0; config1 < C.size(); ++config1) {
+      for (size_t config2 = config1 + 1; config2 < C.size(); ++config2) {
+        Game g1, g2;
+        g1.opponent_rating = C[config2].rating();
+        g1.opponent_rating_deviation = C[config2].rating_deviation();
+        g1.opponent_rating_interval = C[config2].rating_interval();
+        g1.results.reserve(P.size());
+        g2.opponent_rating = C[config1].rating();
+        g2.opponent_rating_deviation = C[config1].rating_deviation();
+        g2.opponent_rating_interval = C[config1].rating_interval();
+        g2.results.reserve(P.size());
+        for (size_t prob = 0; prob < P.size(); ++prob) {
+          Vector<double_t> p_results_1, p_results_2;
+          p_results_1.reserve(max_runs);
+          p_results_2.reserve(max_runs);
+          for (uint8_t run = 0; run < max_runs; ++run) {
+            double_t p1_res = C[config1].results(prob, run);
+            double_t p2_res = C[config2].results(prob, run);
+            double_t p1_time = C[config1].time_results(prob, run);
+            double_t p2_time = C[config2].time_results(prob, run);
+            double_t timediff = p1_time - p2_time;
 
 //            if(timediff < 0) {
 //              p1_res = p1_res + 0.05 * p1_res;
@@ -648,110 +854,110 @@ int main(int argc, char *argv[]) {
 //              p2_res = p2_res + 0.05 * p2_res;
 //            }
 
-              if (logically_equal(p1_res, p2_res)) {
-                p_results_1.push_back(0.5);
-                p_results_2.push_back(0.5);
-              } else if (p1_res < p2_res) {
-                p_results_1.push_back(0.0);
-                p_results_2.push_back(1.0);
-              } else {
-                p_results_1.push_back(1.0);
-                p_results_2.push_back(0.0);
-              }
-              if (logically_equal(p1_time, p2_time)) {
-                p_results_1.back() += 0.0;
-                p_results_2.back() += 0.0;
-              } else if (p1_time < p2_time) {
-                p_results_1.back() += 0.1;
-                p_results_2.back() += -0.1;
-              } else {
-                p_results_2.back() += 0.1;
-                p_results_1.back() += -0.1;
-              }
+            if (logically_equal(p1_res, p2_res)) {
+              p_results_1.push_back(0.5);
+              p_results_2.push_back(0.5);
+            } else if (p1_res < p2_res) {
+              p_results_1.push_back(0.0);
+              p_results_2.push_back(1.0);
+            } else {
+              p_results_1.push_back(1.0);
+              p_results_2.push_back(0.0);
             }
-            g1.results.push_back(std::move(p_results_1));
-            g2.results.push_back(std::move(p_results_2));
+            if (logically_equal(p1_time, p2_time)) {
+              p_results_1.back() += 0.0;
+              p_results_2.back() += 0.0;
+            } else if (p1_time < p2_time) {
+              p_results_1.back() += 0.1;
+              p_results_2.back() += -0.1;
+            } else {
+              p_results_2.back() += 0.1;
+              p_results_1.back() += -0.1;
+            }
           }
-          C[config1].insertGame(std::move(g1));
-          C[config2].insertGame(std::move(g2));
+          g1.results.push_back(std::move(p_results_1));
+          g2.results.push_back(std::move(p_results_2));
         }
+        C[config1].insertGame(std::move(g1));
+        C[config2].insertGame(std::move(g2));
       }
-      std::cout << "Played games" << std::endl;
-      for (size_t config = 0; config < C.size(); ++config) {
-        C[config].updateRating();
-      }
-      std::cout << "Updated rating" << std::endl;
-      auto sortRuleLambda =
-          [](const Configuration &c1, const Configuration &c2) -> bool {
-            return c1.rating() > c2.rating();
-          };
-      std::sort(C.begin(), C.end(), sortRuleLambda);
-      for (Configurations::iterator it = C.begin(); it != C.end(); ++it) {
-        std::cout << it->rating() << " " << it->getRatingInterval().min << " "
-                  << it->getRatingInterval().max << std::endl;
-      }
-      Configurations parents;
-      Configurations newC;
-      parents.reserve(C.size());
-      newC.reserve(C.size());
-//    parents.push_back(*C.begin());
-      for (Configurations::iterator it = C.begin(); it != C.begin() + 10;
-           ++it) {
-        parents.push_back(*it);
-      }
-      Limits<double_t> best_interval = parents.front().getRatingInterval();
-      for (Configurations::iterator it = C.begin() + 1; it != C.end(); ++it) {
-        if (!(best_interval.min > it->getRatingInterval().max ||
-            parents.size() >= MPS)) {
-          parents.push_back(*it);
-        }
-      }
-      for (size_t config = 0; config < 10; ++config) {
-        std::cout << "Parent[" << std::setfill('0') << std::setw(3)
-                  << config << "]: [" << unsigned(parents[config].num_gen())
-                  << ", "
-                  << unsigned(parents[config].pop_size()) << ", "
-                  << unsigned(parents[config].tour_size()) << ", "
-                  << parents[config].cx_rate() << ", "
-                  << parents[config].mut_rate() << ", "
-                  << parents[config].elitist_rate() << "]" << std::endl;
-      }
-      newC = parents;
-      while (newC.size() < pop_size) {
-        std::vector<size_t> parent_indices;
-        parent_indices = get_population_sample(parents.size(), 2, g);
-        Configuration child;
-        cx(C[parent_indices[0]], C[parent_indices[1]], child, cx_prob, g);
-        mut(child, mut_prob, g);
-        newC.push_back(std::move(child));
-      }
-      C = newC;
-      for (size_t config = 0; config < 10; ++config) {
-        std::cout << "Config[" << std::setfill('0') << std::setw(3)
-                  << config << "]: [" << unsigned(C[config].num_gen()) << ", "
-                  << unsigned(C[config].pop_size()) << ", "
-                  << unsigned(C[config].tour_size()) << ", "
-                  << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
-                  << C[config].elitist_rate() << "]" << std::endl;
-      }
-      std::cout << "Generated new population" << std::endl;
     }
+    std::cout << "Played games" << std::endl;
+    for (size_t config = 0; config < C.size(); ++config) {
+      C[config].updateRating();
+    }
+    std::cout << "Updated rating" << std::endl;
     auto sortRuleLambda =
         [](const Configuration &c1, const Configuration &c2) -> bool {
           return c1.rating() > c2.rating();
         };
     std::sort(C.begin(), C.end(), sortRuleLambda);
-    std::cout << "Config\t" << "Rating\t" << "Pop. Size\t"
-              << "Num. Generations\t" << "Tour size\t" << "CX%\t" << "MUT%\t"
-              << "Elite%\t" << std::endl;
-    for (size_t config = 0; config < C.size(); ++config) {
-      std::cout << std::setfill('0') << std::setw(3) << config << "\t"
-                << C[config].rating() << "\t" << unsigned(C[config].pop_size())
-                << "\t"
-                << unsigned(C[config].num_gen()) << "\t"
-                << unsigned(C[config].tour_size()) << "\t"
-                << C[config].cx_rate() << "\t" << C[config].mut_rate() << "\t"
-                << C[config].elitist_rate() << "\t" << std::endl;
+    for (Configurations::iterator it = C.begin(); it != C.end(); ++it) {
+      std::cout << it->rating() << " " << it->getRatingInterval().min << " "
+                << it->getRatingInterval().max << std::endl;
+    }
+    Configurations parents;
+    Configurations newC;
+    parents.reserve(C.size());
+    newC.reserve(C.size());
+//    parents.push_back(*C.begin());
+    for (Configurations::iterator it = C.begin(); it != C.begin() + 10;
+         ++it) {
+      parents.push_back(*it);
+    }
+    Limits<double_t> best_interval = parents.front().getRatingInterval();
+    for (Configurations::iterator it = C.begin() + 1; it != C.end(); ++it) {
+      if (!(best_interval.min > it->getRatingInterval().max ||
+          parents.size() >= MPS)) {
+        parents.push_back(*it);
+      }
+    }
+    for (size_t config = 0; config < 10; ++config) {
+      std::cout << "Parent[" << std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(parents[config].num_gen())
+                << ", "
+                << unsigned(parents[config].pop_size()) << ", "
+                << unsigned(parents[config].tour_size()) << ", "
+                << parents[config].cx_rate() << ", "
+                << parents[config].mut_rate() << ", "
+                << parents[config].elitist_rate() << "]" << std::endl;
+    }
+    newC = parents;
+    while (newC.size() < pop_size) {
+      std::vector<size_t> parent_indices;
+      parent_indices = get_population_sample(parents.size(), 2, g);
+      Configuration child;
+      cx(C[parent_indices[0]], C[parent_indices[1]], child, cx_prob, g);
+      mut(child, mut_prob, g);
+      newC.push_back(std::move(child));
+    }
+    C = newC;
+    for (size_t config = 0; config < 10; ++config) {
+      std::cout << "Config[" << std::setfill('0') << std::setw(3)
+                << config << "]: [" << unsigned(C[config].num_gen()) << ", "
+                << unsigned(C[config].pop_size()) << ", "
+                << unsigned(C[config].tour_size()) << ", "
+                << C[config].cx_rate() << ", " << C[config].mut_rate() << ", "
+                << C[config].elitist_rate() << "]" << std::endl;
+    }
+    std::cout << "Generated new population" << std::endl;
+  }
+  auto sortRuleLambda =
+      [](const Configuration &c1, const Configuration &c2) -> bool {
+        return c1.rating() > c2.rating();
+      };
+  std::sort(C.begin(), C.end(), sortRuleLambda);
+  std::cout << "Config\t" << "Rating\t" << "Pop. Size\t"
+            << "Num. Generations\t" << "Tour size\t" << "CX%\t" << "MUT%\t"
+            << "Elite%\t" << std::endl;
+  for (size_t config = 0; config < C.size(); ++config) {
+    std::cout << std::setfill('0') << std::setw(3) << config << "\t"
+              << C[config].rating() << "\t" << unsigned(C[config].pop_size())
+              << "\t"
+              << unsigned(C[config].num_gen()) << "\t"
+              << unsigned(C[config].tour_size()) << "\t"
+              << C[config].cx_rate() << "\t" << C[config].mut_rate() << "\t"
+              << C[config].elitist_rate() << "\t" << std::endl;
 //    char comma[3] = {'\0', ' ', '\0'};
 //    std::cout << "Config[" << std::setfill('0')
 //              << std::setw(3) << config << "]: " << std::endl;
@@ -764,7 +970,6 @@ int main(int argc, char *argv[]) {
 //      }
 //      std::cout << "]" << std::endl;
 //    }
-    }
   }
   return 0;
 }

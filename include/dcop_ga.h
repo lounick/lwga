@@ -99,6 +99,12 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    double_t max_cost,
                    uint_fast32_t idx_start,
                    uint_fast32_t idx_finish,
+                   uint_fast16_t pop_size,
+                   uint_fast8_t num_gen,
+                   uint_fast8_t tour_size,
+                   double_t cx_rate,
+                   double_t mut_rate,
+                   double_t elitist_rate,
                    std::mt19937 &g);
 
 }

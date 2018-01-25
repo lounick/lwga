@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
         nodes, std_angles, rho, dubins_cost_mat,
-        eucledian_cost_mat, rewards, 81.01, 0, 82, g);
+        eucledian_cost_mat, rewards, 81.01, 0, 82, 200, 50, 6, 0.5, 0.5, 0.03, g);
 //    dcop_ga::Chromosome c = dcop_ga::generate_chromosome(
 //        nodes, std_angles, rho, 30,
 //        0, 26, eucledian_cost_mat, g);

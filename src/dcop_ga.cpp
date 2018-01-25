@@ -110,6 +110,7 @@ void Chromosome::mutate(
           uint_fast32_t best_pa, best_a, best_na;
           double_t best_travel_increase = std::numeric_limits<double_t>::max();
           if (rand_vertex_idx == 1) {
+            //TODO:Fix case where only one vertext exists in path e.g. 0-1-26 in 5x5
             uint_fast32_t pv = tmp_c.path[rand_vertex_idx-1];
             uint_fast32_t nv = tmp_c.path[rand_vertex_idx+1];
             uint_fast32_t nnv = tmp_c.path[rand_vertex_idx+2];
@@ -914,6 +915,12 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    double_t max_cost,
                    uint_fast32_t idx_start,
                    uint_fast32_t idx_finish,
+                   uint_fast16_t pop_size,
+                   uint_fast8_t num_gen,
+                   uint_fast8_t tour_size,
+                   double_t cx_rate,
+                   double_t mut_rate,
+                   double_t elitist_rate,
                    std::mt19937 &g){
   /*
    * Initialise population
@@ -923,13 +930,6 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
    *  Mutate
    * Select fittest
   */
-
-//  uint_fast32_t pop_size = 200;
-//  int tour_size = 3;
-//  int max_gen = 50;
-  uint_fast32_t pop_size = 250;
-  int tour_size = 5;
-  int max_gen = 50;
 
   // Initialise population
   std::vector<Chromosome> pop;
@@ -948,12 +948,11 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
     pop.push_back(c);
   }
 
-  for (int gen = 0; gen < max_gen; ++gen) {
+  for (int gen = 0; gen < num_gen; ++gen) {
     // Select new populations
     std::vector<Chromosome> new_pop;
     new_pop.reserve(pop_size);
-    double_t elite_percent = 0.03;
-    uint_fast32_t num_elites = std::ceil(elite_percent * pop_size);
+    uint_fast32_t num_elites = std::ceil(elitist_rate * pop_size);
     if (num_elites > 0) {
       auto sortRuleLambda = [](const Chromosome &c1, const Chromosome &c2) -> bool {
         return c1.fitness > c2.fitness;
@@ -980,7 +979,6 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
 //      new_pop[indices[0]] = cx_ret.first;
 //      new_pop[indices[1]] = cx_ret.second;
 //    }
-    double_t cx_rate = 0.9;
     if (cx_rate != 0) {
       int num_individuals = std::ceil(pop_size * cx_rate);
       if (num_individuals % 2)
@@ -1024,28 +1022,48 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
       }
     }
     // Mutate
-    std::vector<size_t> indices =
-        get_population_sample(new_pop.size(), std::floor(0.7*pop_size), g);
-    uint_fast32_t M = 6; //number of cores
-    uint_fast32_t chunk_size = indices.size()/M;
+    if (mut_rate != 0) {
+      std::vector<size_t> indices =
+          get_population_sample(new_pop.size(), std::floor(mut_rate * pop_size), g);
+      uint_fast32_t M = 6; //number of cores
+      uint_fast32_t chunk_size = indices.size() / M;
 
 //    for (size_t idx : indices) {
 //      new_pop[idx].mutate(dubins_cost_mat, cost_mat, std_angles, rewards, max_cost, g);
 //    }
-    std::vector< std::future<void> > future_v;
-    for (uint_fast32_t thread_count = 0; thread_count < M; ++thread_count) {
-      //std::launch::deferred|std::launch::async;
-      std::vector<size_t > tmpv(indices.begin()+thread_count*chunk_size,indices.begin()+(thread_count+1)*chunk_size);
-      future_v.push_back(std::async(std::launch::async, par_mutate, tmpv, std::ref(new_pop), std::ref(dubins_cost_mat), std::ref(cost_mat), std::ref(std_angles), std::ref(rewards), std::ref(max_cost)));
+      std::vector<std::future<void> > future_v;
+      for (uint_fast32_t thread_count = 0; thread_count < M; ++thread_count) {
+        //std::launch::deferred|std::launch::async;
+        std::vector<size_t> tmpv(indices.begin() + thread_count * chunk_size,
+                                 indices.begin()
+                                     + (thread_count + 1) * chunk_size);
+        future_v.push_back(std::async(std::launch::async,
+                                      par_mutate,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(dubins_cost_mat),
+                                      std::ref(cost_mat),
+                                      std::ref(std_angles),
+                                      std::ref(rewards),
+                                      std::ref(max_cost)));
+      }
+      if (indices.size() % M != 0) {
+        std::vector<size_t>
+            tmpv(indices.begin() + (M) * chunk_size, indices.end());
+        future_v.push_back(std::async(std::launch::async,
+                                      par_mutate,
+                                      tmpv,
+                                      std::ref(new_pop),
+                                      std::ref(dubins_cost_mat),
+                                      std::ref(cost_mat),
+                                      std::ref(std_angles),
+                                      std::ref(rewards),
+                                      std::ref(max_cost)));
+      }
+      for (auto &f: future_v) {
+        f.get();
+      }
     }
-    if(indices.size()%M != 0){
-      std::vector<size_t> tmpv(indices.begin()+(M)*chunk_size,indices.end());
-      future_v.push_back(std::async(std::launch::async, par_mutate, tmpv, std::ref(new_pop), std::ref(dubins_cost_mat), std::ref(cost_mat), std::ref(std_angles), std::ref(rewards), std::ref(max_cost)));
-    }
-    for(auto &f: future_v){
-      f.get();
-    }
-
     pop = new_pop;
   }
   std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.fitness > c2.fitness; });
