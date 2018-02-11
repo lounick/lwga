@@ -24,7 +24,10 @@ void Chromosome::evaluate_chromosome(Matrix<Matrix<double_t>>&dubins_cost_mat,
     for (uint_fast32_t i = 0; i < cost_mat.size(); ++i)
       vertices.push_back(i);
   }
-
+  if (path.size() < 3) {
+    fitness = 0;
+    return;
+  }
   size_t pathsize = path.size() - 1;
   size_t fsize = free_vertices.size();
 
@@ -49,11 +52,12 @@ void Chromosome::mutate(
     Vector<double_t> &std_angles,
     std::vector<double_t> &rewards, double_t max_cost, std::mt19937 &g){
   Chromosome mutated(*this);
-  std::tie(mutated.path, mutated.angles, mutated.cost) =
-      dubins_two_opt(
-          dubins_cost_mat, std_angles, mutated.nodes, mutated.rho, mutated.path,
-          mutated.angles, mutated.cost);
-  mutated.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
+//  std::tie(mutated.path, mutated.angles, mutated.cost) =
+//      dubins_two_opt(
+//          dubins_cost_mat, std_angles, mutated.nodes, mutated.rho, mutated.path,
+//          mutated.angles, mutated.cost);
+//  mutated.calculate_cost(dubins_cost_mat);
+//  mutated.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
   for (uint_fast32_t iter = 0; iter < 10; ++iter){
     if (std::generate_canonical<double, 10>(g) < 0.9) {
       //Try to add
@@ -123,7 +127,9 @@ void Chromosome::mutate(
                   double_t travel_increase = 0.0;
                   travel_increase += dubins_cost_mat[pv][i][pa][a];
                   travel_increase += dubins_cost_mat[i][nv][a][na];
-                  travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  if (rand_vertex_idx + 2 < tmp_c.path.size()) {
+                    travel_increase += dubins_cost_mat[nv][nnv][na][nna];
+                  }
                   if (travel_increase < best_travel_increase) {
                     best_travel_increase = travel_increase;
                     best_pa = pa;
@@ -144,7 +150,9 @@ void Chromosome::mutate(
 //                for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
                 for (uint_fast32_t na:n_angles) {
                   double_t travel_increase = 0.0;
-                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  if (rand_vertex_idx - 2 >= 0) {
+                    travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  }
                   travel_increase += dubins_cost_mat[pv][i][pa][a];
                   travel_increase += dubins_cost_mat[i][nv][a][na];
                   if (travel_increase < best_travel_increase) {
@@ -263,7 +271,9 @@ void Chromosome::mutate(
               for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
                 for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
                   double_t travel_increase = 0.0;
-                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  if (i - 2 >= 0) {
+                    travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  }
                   travel_increase += dubins_cost_mat[pv][vertex][pa][a];
                   travel_increase += dubins_cost_mat[vertex][nv][a][na];
                   if (travel_increase < travel_increase_pos){
@@ -286,7 +296,9 @@ void Chromosome::mutate(
               for (uint_fast32_t a = 0; a < std_angles.size(); ++a) {
                 for (uint_fast32_t na = 0; na < std_angles.size(); ++na) {
                   double_t travel_increase = 0.0;
-                  travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  if (i - 2 >= 0) {
+                    travel_increase += dubins_cost_mat[ppv][pv][ppa][pa];
+                  }
                   travel_increase += dubins_cost_mat[pv][vertex][pa][a];
                   travel_increase += dubins_cost_mat[vertex][nv][a][na];
                   travel_increase += dubins_cost_mat[nv][nnv][na][nna];
@@ -326,7 +338,9 @@ void Chromosome::mutate(
               uint_fast32_t pa = mutated.angles[i-1];
               uint_fast32_t nv = mutated.path[i];
               uint_fast32_t na = mutated.angles[i];
-              removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              if (i - 2 >= 0) {
+                removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              }
               removed_cost += dubins_cost_mat[pv][nv][pa][na];
             } else {
               uint_fast32_t ppv = mutated.path[i-2];
@@ -337,7 +351,9 @@ void Chromosome::mutate(
               uint_fast32_t na = mutated.angles[i];
               uint_fast32_t nnv = mutated.path[i+1];
               uint_fast32_t nna = mutated.angles[i+1];
-              removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              if (i - 2 >= 0) {
+                removed_cost += dubins_cost_mat[ppv][pv][ppa][pa];
+              }
               removed_cost += dubins_cost_mat[pv][nv][pa][na];
               removed_cost += dubins_cost_mat[nv][nnv][na][nna];
             }
@@ -407,7 +423,7 @@ void Chromosome::mutate(
       }
     } else {
       //Remove
-      if (mutated.cost >= 0.95 * max_cost) {
+      if (mutated.cost >= 0.5 * max_cost) {
         size_t to_remove = 0;
         double min_loss = std::numeric_limits<double>::infinity();
         uint_fast32_t best_pa, best_na;
@@ -872,12 +888,12 @@ void cx(Chromosome &c1,
   //6. Do 2-opt
   off1.calculate_cost(dubins_cost_mat);
   off2.calculate_cost(dubins_cost_mat);
-  std::tie(off1.path, off1.angles, off1.cost) = dubins_two_opt(
-      dubins_cost_mat, std_angles, off1.nodes, off1.rho, off1.path,
-      off1.angles, off1.cost);
-  std::tie(off2.path, off2.angles, off2.cost) = dubins_two_opt(
-      dubins_cost_mat, std_angles, off2.nodes, off2.rho, off2.path,
-      off2.angles, off2.cost);
+//  std::tie(off1.path, off1.angles, off1.cost) = dubins_two_opt(
+//      dubins_cost_mat, std_angles, off1.nodes, off1.rho, off1.path,
+//      off1.angles, off1.cost);
+//  std::tie(off2.path, off2.angles, off2.cost) = dubins_two_opt(
+//      dubins_cost_mat, std_angles, off2.nodes, off2.rho, off2.path,
+//      off2.angles, off2.cost);
   //7. Check feasibility.
   if (off1.cost < max_cost) {
     c1 = off1;
@@ -931,6 +947,16 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
    * Select fittest
   */
 
+  Chromosome best;
+  best.fitness = std::numeric_limits<double_t>::min();
+  uint8_t num_best = 0;
+//  std::cout << max_cost << " " << cost_mat[idx_start][idx_finish] << std::endl;
+  if ((max_cost) <= cost_mat[idx_start][idx_finish]+3) {
+    best.path.push_back(idx_start);
+    best.path.push_back(idx_finish);
+    return best;
+  }
+
   // Initialise population
   std::vector<Chromosome> pop;
   pop.reserve(pop_size);
@@ -941,14 +967,18 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
         nodes, std_angles, rho, max_cost,
         idx_start, idx_finish, dubins_cost_mat, cost_mat, g);
 //    std::tie(c.angles, c.cost) = straighten_path(dubins_cost_mat, nodes, rho, c.path, c.angles, c.cost);
-    std::tie(c.path, c.angles, c.cost) =
-        dubins_two_opt(dubins_cost_mat, std_angles, nodes, rho, c.path, c.angles, c.cost);
+//    std::tie(c.path, c.angles, c.cost) =
+//        dubins_two_opt(dubins_cost_mat, std_angles, nodes, rho, c.path, c.angles, c.cost);
 //    std::tie(c.angles, c.cost) = straighten_path(dubins_cost_mat, nodes, rho, c.path, c.angles, c.cost);
+    c.calculate_cost(dubins_cost_mat);
     c.evaluate_chromosome(dubins_cost_mat, cost_mat, rewards);
     pop.push_back(c);
   }
 
-  for (int gen = 0; gen < num_gen; ++gen) {
+  uint8_t num_stable = 0;
+  uint8_t max_stable = 10;
+
+  for (int gen = 0; gen < num_gen && num_stable < max_stable; ++gen) {
     // Select new populations
     std::vector<Chromosome> new_pop;
     new_pop.reserve(pop_size);
@@ -961,6 +991,13 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
       for (uint_fast32_t e = 0; e < num_elites; ++e) {
         new_pop.push_back(pop[e]);
       }
+    }
+
+    if (logically_equal(best.fitness, new_pop.front().fitness)) {
+      ++num_stable;
+    } else {
+      best = new_pop.front();
+      num_stable = 0;
     }
 
     for (uint_fast32_t i = 0; i < pop_size - num_elites; ++i) {
@@ -1067,7 +1104,8 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
     pop = new_pop;
   }
   std::sort(pop.begin(), pop.end(), [](Chromosome c1, Chromosome c2) { return c1.fitness > c2.fitness; });
-  Chromosome best = pop[0];
+  if (best.fitness < pop[0].fitness)
+    best = pop[0];
   return best;
 }
 

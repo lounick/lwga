@@ -106,18 +106,20 @@ int main(int argc, char *argv[]){
   std::vector<double> fitnesses;
   std::vector<double> times;
 
-  int nexp = 10;
-
+  int nexp = 100;
+//35, 475, 3, 0.6, 0.8, 0.07
   std::random_device rd;
   std::mt19937 g(rd());
   dcop_ga::Chromosome best;
   double_t best_fitness = std::numeric_limits<double_t>::min();
+  dcop_ga::Chromosome worst;
+  double_t worst_fitness = std::numeric_limits<double_t>::max();
   for (int exp = 0; exp < nexp; exp++) {
     std::cout << "Experiment: " << exp << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
     dcop_ga::Chromosome c = dcop_ga::ga_dcop(
         nodes, std_angles, rho, dubins_cost_mat,
-        eucledian_cost_mat, rewards, 81.01, 0, 82, 200, 50, 6, 0.5, 0.5, 0.03, g);
+        eucledian_cost_mat, rewards, 0.5*82.01, 0, 82, 475, 35, 3, 0.6, 0.8, 0.07, g);
 //    dcop_ga::Chromosome c = dcop_ga::generate_chromosome(
 //        nodes, std_angles, rho, 30,
 //        0, 26, eucledian_cost_mat, g);
@@ -188,6 +190,10 @@ int main(int argc, char *argv[]){
       best = c;
       best_fitness = fitness;
     }
+    if (fitness < worst_fitness) {
+      worst = c;
+      worst_fitness = fitness;
+    }
   }
   std::cout << "Best:" << std::endl;
   print_path(best.path);
@@ -197,6 +203,14 @@ int main(int argc, char *argv[]){
   }
   print_vector<double_t>(angles);
   std::cout << best_fitness << std::endl;
+  std::cout << "Worst:" << std::endl;
+  print_path(worst.path);
+  angles.clear();
+  for (size_t i = 0; i < worst.angles.size(); ++i) {
+    angles.push_back(std_angles[worst.angles[i]]);
+  }
+  print_vector<double_t>(angles);
+  std::cout << worst_fitness << std::endl;
   double avg_fit = std::accumulate(fitnesses.begin(), fitnesses.end(), 0.0) / fitnesses.size();
   std::cout << "Average fitness: " << avg_fit << std::endl;
   double fit_var = 0.0;

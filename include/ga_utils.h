@@ -50,14 +50,14 @@ std::pair<std::vector<Vertex>, std::vector<double>> generate_grid (double x_size
 bool logically_equal(double a, double b, double error_factor = 1.0);
 
 template <typename T>
-void print_vector(Vector<T> v){
-  std::cout << "[";
+void print_vector(Vector<T> v, std::ostream & out = std::cout){
+  out << "[";
   std::string comma = "";
   for (typename Vector<T>::iterator it = v.begin(); it != v.end(); ++it){
-    std::cout << comma << std::setprecision(10) << *it;
+    out << comma << std::setprecision(10) << *it;
     comma = ", ";
   }
-  std::cout << "]" << std::endl;
+  out << "]" << std::endl;
 }
 
 template <typename T> int sgn(T val) {

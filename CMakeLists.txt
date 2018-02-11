@@ -64,7 +64,7 @@ add_library(dubins-curves src/dubins.cpp)
 
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
-target_link_libraries(cop-ga pthread)
+target_link_libraries(cop-ga dubins-curves pthread)
 
 add_executable(ctop-ga ${CTOP_GA})
 target_link_libraries(ctop-ga pthread)
@@ -89,3 +89,9 @@ target_link_libraries(dubins-crs-tuner dcop-ga)
 
 add_executable(dcop-ga-main  src/dcop_ga_main.cpp)
 target_link_libraries(dcop-ga-main dcop-ga)
+
+add_executable(iros18-experiments-rho runs/iros18_experiments_rho.cpp)
+target_link_libraries(iros18-experiments-rho dcop-ga)
+
+add_executable(iros18-experiments-cc runs/iros18_experiments_cc.cpp)
+target_link_libraries(iros18-experiments-cc dcop-ga)
