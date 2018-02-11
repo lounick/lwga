@@ -1022,10 +1022,12 @@ Chromosome ga_ctop(Matrix<double> &cost_mat,
         new_pop.push_back(pop[e]);
       }
     }
-    if (logically_equal(best.total_fitness, new_pop.front().total_fitness))
+    if (logically_equal(best.total_fitness, new_pop.front().total_fitness)) {
       ++num_stable;
-    else
+    } else {
       best = new_pop.front();
+      num_stable = 0;
+    }
     for (uint_fast32_t i = 0; i < pop_size - num_elites; ++i) {
       new_pop.push_back(tournament_select(pop, tour_size, g));
     }
