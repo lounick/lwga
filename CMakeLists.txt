@@ -59,15 +59,33 @@ set(ICRA18_CTOP_MIQP_COMPARE
 
 include_directories(.)
 include_directories(include)
+include_directories(/opt/gurobi702/linux64/include)
+
+link_directories(/opt/gurobi702/linux64/lib)
 
 add_library(dubins-curves src/dubins.cpp)
+
+add_library(ga-utils src/ga_utils.cpp)
+target_link_libraries(ga-utils dubins-curves)
+
+add_library(mdmtsp src/mdmtsp_solver.cpp)
+target_link_libraries(mdmtsp gurobi_c++ gurobi70 pthread)
+
+add_library(cop_ga src/cop_ga.cpp)
+target_link_libraries(cop_ga ga-utils pthread)
+
+add_library(ctop_ga src/ctop_ga.cpp)
+target_link_libraries(ctop_ga ga-utils pthread)
+
+add_library(two_level_solver src/two_level_solver.cpp)
+target_link_libraries(two_level_solver mdmtsp cop_ga)
 
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
 target_link_libraries(cop-ga dubins-curves pthread)
 
 add_executable(ctop-ga ${CTOP_GA})
-target_link_libraries(ctop-ga pthread)
+target_link_libraries(ctop-ga dubins-curves pthread)
 
 add_executable(icra17-cop ${ICRA17_COP})
 target_link_libraries(icra17-cop pthread)
@@ -95,3 +113,29 @@ target_link_libraries(iros18-experiments-rho dcop-ga)
 
 add_executable(iros18-experiments-cc runs/iros18_experiments_cc.cpp)
 target_link_libraries(iros18-experiments-cc dcop-ga)
+
+add_executable(mdmtsp_problem src/mdmtsp_main.cpp src/ga_utils.cpp)
+target_link_libraries(mdmtsp_problem dubins-curves mdmtsp)
+
+add_executable(two-level-solver-main src/two_level_solver_main.cpp)
+target_link_libraries(two-level-solver-main two_level_solver)
+
+add_executable(large-ctop src/large_ctop_main.cpp)
+target_link_libraries(large-ctop ctop_ga)
+
+add_executable(cop-crs-tuner src/cop_crs_tuner.cpp)
+target_link_libraries(cop-crs-tuner cop_ga)
+
+add_executable(multi-area-comparisson src/multi-area-comparisson.cpp)
+target_link_libraries(multi-area-comparisson two_level_solver ctop_ga)
+
+add_executable(chap7 runs/chap-7-runs.cpp)
+target_link_libraries(chap7 two_level_solver ctop_ga)
+
+add_executable(dop_runs runs/dop_runs.cpp)
+target_link_libraries(dop_runs dcop-ga)
+
+add_executable(dcop_online_replan runs/dcop_online_replan.cpp)
+target_link_libraries(dcop_online_replan dcop-ga)
+
+add_subdirectory(test)

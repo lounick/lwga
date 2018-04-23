@@ -43,7 +43,14 @@ class Chromosome {
               Vector<double_t> &std_angles,
               std::vector<double_t> &rewards,
               double_t max_cost,
-              std::mt19937 &g);
+              std::mt19937 &g, size_t start_idx);
+  void remove_vertex(Matrix<Matrix<double_t>>&dubins_cost_mat,
+                     Matrix<double_t> &cost_mat,
+                     Vector<double_t> &std_angles,
+                     std::vector<double_t> &rewards,
+                     double_t max_cost,
+                     std::mt19937 &g, size_t start_idx);
+  double_t max_dist = 0.0; //TODO: [OP] This should be set when chromosome is generated
 };
 
 void expand_neighbours(std::vector<uint_fast32_t> &neighbours,
@@ -52,14 +59,25 @@ void expand_neighbours(std::vector<uint_fast32_t> &neighbours,
                        const Matrix<double> &cost_mat);
 
 Chromosome generate_chromosome(std::shared_ptr<Vector<Point2D>> nodes,
-                               Vector<double_t> std_angles,
+                               const Vector<double_t> &std_angles,
                                double_t rho,
                                double_t max_cost,
                                uint_fast32_t idx_start,
                                uint_fast32_t idx_finish,
-                               Matrix<Matrix<double_t>>&dubins_cost_mat,
+                               const Matrix<Matrix<double_t>>&dubins_cost_mat,
                                const Matrix<double_t> &cost_mat,
                                std::mt19937 &g);
+
+Chromosome extend_chromosome(std::shared_ptr<Vector<Point2D>> nodes,
+                             const Vector<double_t> &std_angles,
+                             double_t rho,
+                             double_t max_cost,
+                             uint_fast32_t idx_start,
+                             uint_fast32_t idx_finish,
+                             const Matrix<Matrix<double_t>>&dubins_cost_mat,
+                             const Matrix<double_t> &cost_mat,
+                             std::mt19937 &g,
+                             Chromosome init);
 
 Chromosome tournament_select(std::vector<Chromosome> &population,
                              uint_fast32_t tour_size,
@@ -72,7 +90,7 @@ void cx(Chromosome &c1,
         Matrix<double_t> &cost_mat,
         Vector<double_t> &rewards,
         double max_cost,
-        std::mt19937 &g);
+        std::mt19937 &g, size_t start_idx);
 
 void par_cx(std::vector<size_t> indices,
             std::vector<Chromosome> &pop,
@@ -80,7 +98,7 @@ void par_cx(std::vector<size_t> indices,
             Vector<double_t> &std_angles,
             Matrix<double_t> &cost_mat,
             std::vector<double_t> &rewards,
-            double_t max_cost);
+            double_t max_cost, size_t start_idx);
 
 void par_mutate(std::vector<size_t> indices,
                 std::vector<Chromosome> &pop,
@@ -88,7 +106,7 @@ void par_mutate(std::vector<size_t> indices,
                 Matrix<double> &cost_mat,
                 Vector<double_t> &std_angles,
                 std::vector<double> &rewards,
-                double &max_cost);
+                double &max_cost, size_t start_idx);
 
 Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    Vector<double_t> std_angles,
@@ -106,6 +124,23 @@ Chromosome ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
                    double_t mut_rate,
                    double_t elitist_rate,
                    std::mt19937 &g);
+
+Chromosome replan_ga_dcop(std::shared_ptr<Vector<Point2D>> nodes,
+                          Vector<double_t> std_angles,
+                          double_t rho,
+                          Matrix<Matrix<double_t>>&dubins_cost_mat,
+                          Matrix<double_t> &cost_mat,
+                          std::vector<double_t> &rewards,
+                          double_t max_cost,
+                          uint_fast32_t idx_start,
+                          uint_fast32_t idx_finish,
+                          uint_fast16_t pop_size,
+                          uint_fast8_t num_gen,
+                          uint_fast8_t tour_size,
+                          double_t cx_rate,
+                          double_t mut_rate,
+                          double_t elitist_rate,
+                          std::mt19937 &g, Chromosome init);
 
 }
 #endif //LWGA_DCOP_GA_H
