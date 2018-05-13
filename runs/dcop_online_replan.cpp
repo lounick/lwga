@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   double_t total_planning_time;
   double_t max_cost = 82.01;
 
-  int nexp = 10;
+  int nexp = 50;
 //35, 475, 3, 0.6, 0.8, 0.07
   std::random_device rd;
   std::mt19937 g(rd());
@@ -250,6 +250,7 @@ int main(int argc, char *argv[]) {
 //
 //    double_t new_max_cost = 82.01/4.0;
 //    std::cout << new_max_cost << std::endl;
+    start = std::chrono::high_resolution_clock::now();
     double_t replanned_fit = -std::numeric_limits<double_t>::infinity();
     dcop_ga::Chromosome br;
     for (size_t cnt = 0; cnt < 3; ++cnt) {
