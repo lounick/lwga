@@ -15,6 +15,31 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LWGA_CXX_FLAGS}")
 #        src/ctop_ga.cpp
 #    )
 
+# Download and unpack googletest at configure time
+configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+  message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+  RESULT_VARIABLE result
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+  message(FATAL_ERROR "Build step for googletest failed: ${result}")
+endif()
+
+# Prevent overriding the parent project's compiler/linker
+# settings on Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+# Add googletest directly to our build. This defines
+# the gtest and gtest_main targets.
+add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+                 EXCLUDE_FROM_ALL)
+
 set(GENERIC_FILES
         include/ga_types.h include/ga_utils.h src/ga_utils.cpp)
 
@@ -70,6 +95,8 @@ add_library(dubins-curves src/dubins.cpp)
 add_library(ga-utils src/ga_utils.cpp)
 target_link_libraries(ga-utils dubins-curves)
 
+add_library(rng src/rng.cpp)
+
 add_library(mdmtsp src/mdmtsp_solver.cpp)
 target_link_libraries(mdmtsp gurobi_c++ gurobi81 pthread)
 
@@ -82,6 +109,8 @@ target_link_libraries(ctop_ga ga-utils pthread)
 add_library(two_level_solver src/two_level_solver.cpp)
 target_link_libraries(two_level_solver mdmtsp cop_ga)
 
+add_library(pop_ga src/pop_ga.cpp)
+target_link_libraries(pop_ga ga-utils rng)
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
 target_link_libraries(cop-ga dubins-curves pthread)
@@ -140,4 +169,7 @@ target_link_libraries(dop_runs dcop-ga)
 add_executable(dcop_online_replan runs/dcop_online_replan.cpp)
 target_link_libraries(dcop_online_replan dcop-ga)
 
-add_subdirectory(test)
+include(CTest)
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif()
