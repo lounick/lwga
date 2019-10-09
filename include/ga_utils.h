@@ -17,8 +17,6 @@
 #include <sstream>
 #include <vector>
 
-typedef std::pair<double, double> Vertex;
-
 double find_distance(Point2D a, Point2D b);
 
 std::vector<size_t> get_population_sample(size_t pop_size,
@@ -59,7 +57,7 @@ double calculate_fitness(Path p,
 
 void print_path(Path p);
 
-std::pair<std::vector<Vertex>, std::vector<double>> generate_grid(double x_size,
+std::pair<std::vector<Point2D>, std::vector<double>> generate_grid(double x_size,
                                                                   double y_size,
                                                                   std::pair<
                                                                       double,

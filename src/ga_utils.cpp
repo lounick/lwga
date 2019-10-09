@@ -137,12 +137,12 @@ void print_path(Path p) {
   std::cout << "]" << std::endl;
 }
 
-std::pair<std::vector<Vertex>, std::vector<double>>
+std::pair<std::vector<Point2D>, std::vector<double>>
 generate_grid(double x_size,
               double y_size,
               std::pair<double, double> idx_start) {
 
-  return std::pair<std::vector<Vertex>, std::vector<double>>();
+  return std::pair<std::vector<Point2D>, std::vector<double>>();
 }
 void
 mutual_two_opt(Path &path1,
