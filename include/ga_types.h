@@ -14,7 +14,8 @@
 
 template<typename T> using Matrix = std::vector<std::vector<T> >;
 template<typename T> using Vector = std::vector<T>;
-using Path = std::vector<uint_fast32_t>;
+using VertexId = uint_fast32_t;
+using Path = Vector<VertexId>;
 using Point2D = std::pair<double, double>;
 
 class SamplingArea {
