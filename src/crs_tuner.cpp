@@ -471,7 +471,7 @@ Problems generateProblems() {
 }
 
 double_t evaluateChromosome(
-    Chromosome &c, Matrix<double_t> &cost_mat, Vector<double_t> &rewards,
+    ctop_ga::Chromosome &c, Matrix<double_t> &cost_mat, Vector<double_t> &rewards,
     Vector<double_t> &max_cost_v) {
   c.evaluate_chromosome(cost_mat, rewards, max_cost_v);
   std::unordered_set<uint_fast32_t> seen;
@@ -669,10 +669,10 @@ int main(int argc, char *argv[]) {
 //                    << std::setfill('0') << std::setw(3) << prob
 //                    << ", run " << std::setfill('0') << std::setw(3)
 //                    << unsigned(run) << std::endl;
-            Chromosome c;
+            ctop_ga::Chromosome c;
             double_t result;
             auto start = std::chrono::high_resolution_clock::now();
-            c = ga_ctop(
+            c = ctop_ga::ga_ctop(
                 P[prob].cost_mat, P[prob].rewards, P[prob].max_cost_v,
                 0, P[prob].cost_mat.size() - 1, g, C[config].pop_size(),
                 C[config].num_gen(), C[config].tour_size(), C[config].cx_rate(),

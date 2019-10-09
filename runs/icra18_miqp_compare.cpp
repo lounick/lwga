@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
       max_cost_v = std::vector<double_t>(nr, ec * double_t(total_cost) / double_t(nr));
       for (size_t i = 0; i < num_exp; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        Chromosome c = ga_ctop(
+        ctop_ga::Chromosome c = ctop_ga::ga_ctop(
             cost_mat, rewards, max_cost_v, 0, 82, g, config.pop_size,
             config.num_gen, config.tour_size, config.cx_rate, config.mut_rate,
             config.method, config.elite_rate);

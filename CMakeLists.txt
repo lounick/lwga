@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.3)
 project(LWGA)
 
-set(LWGA_CXX_FLAGS "-pthread -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic")
-set(CMAKE_CXX_FLAGS "-std=c++14 ${LWGA_CXX_FLAGS}")
+set(CMAKE_CXX_STANDARD 14)
+set(LWGA_CXX_FLAGS "-pthread -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic -Wconversion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LWGA_CXX_FLAGS}")
+#set(CMAKE_CXX_FLAGS "-std=c++14 ${LWGA_CXX_FLAGS}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${LWGA_CXX_FLAGS}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ggdb -std=c++14 ${LWGA_CXX_FLAGS}")
 
@@ -59,9 +61,9 @@ set(ICRA18_CTOP_MIQP_COMPARE
 
 include_directories(.)
 include_directories(include)
-include_directories(/opt/gurobi702/linux64/include)
+include_directories(/opt/gurobi811/linux64/include)
 
-link_directories(/opt/gurobi702/linux64/lib)
+link_directories(/opt/gurobi811/linux64/lib)
 
 add_library(dubins-curves src/dubins.cpp)
 
@@ -69,7 +71,7 @@ add_library(ga-utils src/ga_utils.cpp)
 target_link_libraries(ga-utils dubins-curves)
 
 add_library(mdmtsp src/mdmtsp_solver.cpp)
-target_link_libraries(mdmtsp gurobi_c++ gurobi70 pthread)
+target_link_libraries(mdmtsp gurobi_c++ gurobi81 pthread)
 
 add_library(cop_ga src/cop_ga.cpp)
 target_link_libraries(cop_ga ga-utils pthread)
@@ -88,16 +90,16 @@ add_executable(ctop-ga ${CTOP_GA})
 target_link_libraries(ctop-ga dubins-curves pthread)
 
 add_executable(icra17-cop ${ICRA17_COP})
-target_link_libraries(icra17-cop pthread)
+target_link_libraries(icra17-cop dubins-curves pthread)
 
 #add_executable(top_ga ${TOP_GA})
 #target_link_libraries(top_ga pthread)
 
 add_executable(icra18_ctop_miqp_compare ${ICRA18_CTOP_MIQP_COMPARE})
-target_link_libraries(icra18_ctop_miqp_compare pthread)
+target_link_libraries(icra18_ctop_miqp_compare dubins-curves pthread)
 
 add_executable(crs_tuner ${CTOP_TUNING})
-target_link_libraries(crs_tuner pthread)
+target_link_libraries(crs_tuner dubins-curves pthread)
 
 add_library(dcop-ga src/dubins.cpp src/ga_utils.cpp src/dcop_ga.cpp)
 target_link_libraries(dcop-ga pthread)

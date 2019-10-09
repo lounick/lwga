@@ -43,7 +43,7 @@ int main() {
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
-    Chromosome c = ga_cop(cost_mat, rewards, 51*3/4, 0, 26, g);
+    cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, 51*3/4, 0, 26, g, 100, 50, 3, 0.1, 0.8, 0.05);
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> diff = end - start;
     times.push_back(diff.count());

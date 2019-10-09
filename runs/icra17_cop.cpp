@@ -61,7 +61,8 @@ int main(int argc, char* argv[]){
     res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 26, g);
+      // TODO: Check parameters with paper
+      cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, max_costs[mc], 0, 26, g, 100, 50, 3, 0.1, 0.8, 0.05);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       times.push_back(diff.count());
@@ -132,7 +133,8 @@ int main(int argc, char* argv[]){
     res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 37, g);
+      // TODO: Check numbers with paper
+      cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, max_costs[mc], 0, 37, g, 100, 50, 3, 0.1, 0.8, 0.05);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       times.push_back(diff.count());
@@ -203,7 +205,8 @@ int main(int argc, char* argv[]){
     res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 50, g);
+      // TODO: Check numbers with paper
+      cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, max_costs[mc], 0, 50, g, 100, 50, 3, 0.1, 0.8, 0.05);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       times.push_back(diff.count());
@@ -274,7 +277,8 @@ int main(int argc, char* argv[]){
     res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 65, g);
+      // TODO: Check numbers with paper
+      cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, max_costs[mc], 0, 65, g, 100, 50, 3, 0.1, 0.8, 0.05);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       times.push_back(diff.count());
@@ -345,7 +349,8 @@ int main(int argc, char* argv[]){
     res_file << "===" << max_costs[mc] << "===" << std::endl;
     for (int i = 0; i < num_exp; ++i) {
       auto start = std::chrono::high_resolution_clock::now();
-      Chromosome c = ga_cop(cost_mat, rewards, max_costs[mc], 0, 82, g);
+      // TODO: Check numbers with paper
+      cop_ga::Chromosome c = cop_ga::ga_cop(cost_mat, rewards, max_costs[mc], 0, 82, g, 100, 50, 3, 0.1, 0.8, 0.05);
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       times.push_back(diff.count());

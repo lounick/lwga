@@ -73,13 +73,13 @@ int main() {
   std::random_device rd;
   std::mt19937 g(rd());
 
-  Chromosome best(cost_mat.size(), num_robots, 0, 82);
+  ctop_ga::Chromosome best(cost_mat.size(), num_robots, 0, 82);
   double best_fit = 0;
 
   for (int exp = 0; exp < nexp; exp++) {
     auto start = std::chrono::high_resolution_clock::now();
 //    Chromosome c = ga_ctop(cost_mat, rewards, max_cost_v, 0, 26, g);
-    Chromosome c = ga_ctop(
+    ctop_ga::Chromosome c = ctop_ga::ga_ctop(
 //        cost_mat, rewards, max_cost_v, 0, 82, g, 250, 50, 8, 0.9, 0.8,
         cost_mat, rewards, max_cost_v, 0, 82, g, 250, 50, 5, 0.9, 0.7,
         "NNGRASP", 0.03);
