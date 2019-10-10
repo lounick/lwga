@@ -104,6 +104,8 @@ TEST(POPGATest, generateRandomChromosomeCostTest) {
   props.maximum_cost = 7.0;
   props.cost_per_time_unit = 1.0;
 
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
   Matrix<double_t> costs{
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
@@ -117,7 +119,7 @@ TEST(POPGATest, generateRandomChromosomeCostTest) {
       .Times(2)
       .WillOnce(::testing::Return(0))
       .WillOnce(::testing::ReturnArg<1>());
-  pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, costs, g);
+  pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, r, probs, costs, g);
   double_t path_cost = 4.0;
   EXPECT_DOUBLE_EQ(c.cost, path_cost);
   EXPECT_EQ(c.p.front(), props.start_id);
@@ -133,6 +135,8 @@ TEST(POPGATest, generateRandomChromosomeCostLETest) {
   props.maximum_cost = 7.0;
   props.cost_per_time_unit = 1.0;
 
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
   Matrix<double_t> costs{
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
@@ -141,7 +145,8 @@ TEST(POPGATest, generateRandomChromosomeCostLETest) {
   rng::RandomNumberGenerator g;
   size_t num_executions = 100000;
   for (size_t i = 0; i < num_executions; ++i) {
-    pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, costs, g);
+    pop_ga::Chromosome c =
+        pop_ga::GenerateChromosome(props, r, probs, costs, g);
     EXPECT_LE(c.cost, props.maximum_cost);
     EXPECT_EQ(c.p.front(), props.start_id);
     EXPECT_EQ(c.p.back(), props.end_id);
@@ -156,6 +161,8 @@ TEST(POPGATest, generateGRASPChromosomeTest) {
   props.maximum_cost = 7.0;
   props.cost_per_time_unit = 1.0;
 
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
   Matrix<double_t> costs{
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
@@ -163,14 +170,63 @@ TEST(POPGATest, generateGRASPChromosomeTest) {
 
   // TODO: REPLACE WITH MOCK
   rng::RandomNumberGenerator g;
-  pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, costs, g);
+  pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, r, probs, costs, g);
   EXPECT_LE(c.cost, props.maximum_cost);
   EXPECT_GT(c.cost, 0);
   //  EXPECT_TRUE((c.cost > 0.0) && (c.cost <= props.maximum_cost));
-  //using ::testing::AllOf;
-  //using ::testing::Gt;
-  //using ::testing::Le;
-  //EXPECT_THAT(c.cost, AllOf(Gt(0), Le(props.maximum_cost)));
+  // using ::testing::AllOf;
+  // using ::testing::Gt;
+  // using ::testing::Le;
+  // EXPECT_THAT(c.cost, AllOf(Gt(0), Le(props.maximum_cost)));
+}
+
+TEST(POPGATest, generateInsertMoveSuccessTest) {
+  pop_ga::Properties props;
+  props.maximum_cost = 7.0;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  Path p{0, 5};
+  VertexId inserted_vertex = 1;
+  double_t current_cost = 0.0;
+  pop_ga::InsertMoveRet ret = pop_ga::GenerateInsertMove(
+      inserted_vertex, p.begin(), p.end() - 1, r, probs, costs, current_cost,
+      props.maximum_cost);
+  EXPECT_EQ(ret.first, true);
+  EXPECT_GT(ret.second.cost_increase, 0.0);
+  // TODO: Insert value
+  double_t score = 10.0;
+  // TODO: Insert value
+  double_t cost_increase = 4.0;
+  // TODO: Insert value
+  double_t heuristic_value = 10.0/4.0;
+  EXPECT_DOUBLE_EQ(ret.second.score, score);
+  EXPECT_DOUBLE_EQ(ret.second.cost_increase, cost_increase);
+  EXPECT_DOUBLE_EQ(ret.second.heuristic_value, heuristic_value);
+}
+
+TEST(POPGATest, generateInsertMoveFailTest) {
+  pop_ga::Properties props;
+  props.maximum_cost = 2.0;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  Path p{0, 5};
+  VertexId inserted_vertex = 1;
+  double_t current_cost = 0.0;
+  pop_ga::InsertMoveRet ret = pop_ga::GenerateInsertMove(
+      inserted_vertex, p.begin(), p.end() - 1, r, probs, costs, current_cost,
+      props.maximum_cost);
+  EXPECT_EQ(ret.first, false);
+  EXPECT_GT(ret.second.cost_increase, 0.0);
 }
 
 int main(int argc, char **argv) {

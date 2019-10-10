@@ -95,13 +95,15 @@ double_t CalculateExpectedTimeObjective(const Path &p,
 
 // TODO: Docstring
 Chromosome GenerateChromosome(const Properties &properties,
+                              const Vector<double_t> &rewards,
+                              const Vector<double_t> &probs,
                               const Matrix<double_t> &costs,
                               rng::RandomNumberGenerator &rng) {
   switch (properties.generation_method) {
     case GenerationMethod::RANDOM:
       return GenerateRandomChromosome(properties, costs, rng);
     case GenerationMethod::GRASP:
-      return GenerateGRASPChromosome(properties, costs, rng);
+      return GenerateGRASPChromosome(properties, rewards, probs, costs, rng);
   }
 }
 
@@ -155,10 +157,49 @@ Chromosome GenerateRandomChromosome(const Properties &properties,
 
 // TODO: Docstring
 Chromosome GenerateGRASPChromosome(const Properties &properties,
+                                   const Vector<double_t> &rewards,
+                                   const Vector<double_t> &probs,
                                    const Matrix<double_t> &costs,
                                    rng::RandomNumberGenerator &rng) {
   Chromosome c;
+  c.cost = 0.0;
   return c;
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+Vector<InsertMove> GenerateInsertMoves(const Path &p,
+                                       const Vector<VertexId> &free_vertices,
+                                       const Vector<double_t> &rewards,
+                                       const Vector<double_t> &probs,
+                                       const Matrix<double_t> &costs,
+                                       const double_t max_cost) {}
+
+// TODO: Fill me in
+// TODO: Docstring
+InsertMoveRet GenerateInsertMove(
+    VertexId free_vertex, Path::const_iterator vertex_before,
+    Path::const_iterator vertex_after, const Vector<double_t> &rewards,
+    const Vector<double_t> &probs, const Matrix<double_t> &costs,
+    const double_t current_cost, const double_t max_cost) {
+  InsertMoveRet im;
+  im.first = false;
+  // Calcuclate cost increase
+  im.second.cost_increase = costs[*vertex_before][free_vertex] +
+                            costs[free_vertex][*vertex_after] -
+                            costs[*vertex_before][*vertex_after];
+  if ((current_cost + im.second.cost_increase < max_cost) ||
+      logically_equal(current_cost + im.second.cost_increase, max_cost)) {
+    // Insert can be performed
+    im.first = true;
+    // TODO: Check different policies for score. I.e. if we take the probabilities into account
+    im.second.score = rewards[free_vertex];
+    im.second.heuristic_value = im.second.score/im.second.cost_increase;
+  } else {
+    // Insert can't be performed
+    im.first = false;
+  }
+  return im;
 }
 }  // namespace pop_ga
 
