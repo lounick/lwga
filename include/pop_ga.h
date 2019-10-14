@@ -34,17 +34,25 @@ struct Properties {
   double_t maximum_cost;
   double_t cost_per_time_unit;
   double_t grasp_greediness;
+  bool grasp_estimated_reward;
 };
 
 struct InsertMove {
   Path::const_iterator vertex_before;
   Path::const_iterator vertex_after;
+  VertexId free_vertex;
   double_t score;
   double_t cost_increase;
   double_t heuristic_value;
 };
 
 using InsertMoveRet = std::pair<bool, InsertMove>;
+
+struct CandidateList {
+  Vector<InsertMove> insert_moves;
+  double_t heuristic_min;
+  double_t heuristic_max;
+};
 
 // TODO: Docstring
 double_t CalculateTotalReward(const Path &p, const Vector<double_t> &rewards);
@@ -83,6 +91,10 @@ double_t CalculateExpectedTimeObjective(const Path &p,
 
 // TODO: Fill me in
 // TODO: Docstring
+void RemoveVertex(Vector<VertexId> &v, VertexId vertex);
+
+// TODO: Fill me in
+// TODO: Docstring
 Vector<Chromosome> InitialisePopulation();
 
 // TODO: Fill me in
@@ -109,20 +121,21 @@ Chromosome GenerateGRASPChromosome(const Properties &properties,
 
 // TODO: Fill me in
 // TODO: Docstring
-Vector<InsertMove> GenerateInsertMoves(const Path &p,
-                                       const Vector<VertexId> &free_vertices,
-                                       const Vector<double_t> &rewards,
-                                       const Vector<double_t> &probs,
-                                       const Matrix<double_t> &costs,
-                                       const double_t max_cost);
+CandidateList GenerateInsertMoves(const Path &p,
+                                  const Vector<VertexId> &free_vertices,
+                                  const Properties &properties,
+                                  const Vector<double_t> &rewards,
+                                  const Vector<double_t> &probs,
+                                  const Matrix<double_t> &costs,
+                                  const double_t current_cost);
 
 // TODO: Fill me in
 // TODO: Docstring
 InsertMoveRet GenerateInsertMove(
     VertexId free_vertex, Path::const_iterator vertex_before,
-    Path::const_iterator vertex_after, const Vector<double_t> &rewards,
-    const Vector<double_t> &probs, const Matrix<double_t> &costs,
-    const double_t current_cost, const double_t max_cost);
+    Path::const_iterator vertex_after, const Properties &properties,
+    const Vector<double_t> &rewards, const Vector<double_t> &probs,
+    const Matrix<double_t> &costs, const double_t current_cost);
 
 // TODO: Fill me in
 // TODO: Docstring

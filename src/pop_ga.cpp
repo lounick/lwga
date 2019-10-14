@@ -1,5 +1,6 @@
 #include "pop_ga.h"
 #include <algorithm>
+#include <limits>
 
 namespace pop_ga {
 // TODO: Fill me in
@@ -94,6 +95,26 @@ double_t CalculateExpectedTimeObjective(const Path &p,
 }
 
 // TODO: Docstring
+void RemoveVertex(Vector<VertexId> &v, VertexId vertex) {
+  v.erase(std::remove(v.begin(), v.end(), vertex));
+}
+
+// TODO: Docstring
+Chromosome InitialiseEmptyChromosome(const Properties &properties,
+                                     const Matrix<double_t> costs) {
+  Chromosome c;
+  c.cost = 0.0;
+  c.reward = 0.0;
+  c.fitness = 0.0;
+  c.free_vertices = Vector<VertexId>(costs.size());
+  std::iota(c.free_vertices.begin(), c.free_vertices.end(), 0);
+  RemoveVertex(c.free_vertices, properties.start_id);
+  RemoveVertex(c.free_vertices, properties.end_id);
+  c.p.reserve(costs.size());
+  return c;
+}
+
+// TODO: Docstring
 Chromosome GenerateChromosome(const Properties &properties,
                               const Vector<double_t> &rewards,
                               const Vector<double_t> &probs,
@@ -111,7 +132,7 @@ Chromosome GenerateChromosome(const Properties &properties,
 Chromosome GenerateRandomChromosome(const Properties &properties,
                                     const Matrix<double_t> &costs,
                                     rng::RandomNumberGenerator &rng) {
-  Chromosome c;
+  Chromosome c = InitialiseEmptyChromosome(properties, costs);
   // Insert start vertex
   // While not done
   //   Get random vertex
@@ -120,16 +141,6 @@ Chromosome GenerateRandomChromosome(const Properties &properties,
   //   Else
   //     done
   // Insert end vertex
-  c.cost = 0.0;
-  c.reward = 0.0;
-  c.fitness = 0.0;
-  c.free_vertices = Vector<VertexId>(costs.size());
-  std::iota(c.free_vertices.begin(), c.free_vertices.end(), 0);
-  c.free_vertices.erase(std::remove(
-      c.free_vertices.begin(), c.free_vertices.end(), properties.start_id));
-  c.free_vertices.erase(std::remove(c.free_vertices.begin(),
-                                    c.free_vertices.end(), properties.end_id));
-  c.p.reserve(costs.size());
   c.p.push_back(properties.start_id);
   bool done = false;
   while (!done) {
@@ -141,8 +152,7 @@ Chromosome GenerateRandomChromosome(const Properties &properties,
         logically_equal(total_cost, properties.maximum_cost)) {
       c.cost += costs[c.p.back()][vertex];
       c.p.push_back(vertex);
-      c.free_vertices.erase(
-          std::remove(c.free_vertices.begin(), c.free_vertices.end(), vertex));
+      RemoveVertex(c.free_vertices, vertex);
     } else {
       done = true;
     }
@@ -161,40 +171,93 @@ Chromosome GenerateGRASPChromosome(const Properties &properties,
                                    const Vector<double_t> &probs,
                                    const Matrix<double_t> &costs,
                                    rng::RandomNumberGenerator &rng) {
-  Chromosome c;
-  c.cost = 0.0;
+  Chromosome c = InitialiseEmptyChromosome(properties, costs);
+  c.p.push_back(properties.start_id);
+  c.p.push_back(properties.end_id);
+  c.cost = costs[properties.start_id][properties.end_id];
+  CandidateList cl = GenerateInsertMoves(c.p, c.free_vertices, properties,
+                                         rewards, probs, costs, c.cost);
+  while (!cl.insert_moves.empty()) {
+    double_t threshold =
+        cl.heuristic_min +
+        properties.grasp_greediness * (cl.heuristic_max - cl.heuristic_min);
+    Vector<InsertMove> rcl;
+    rcl.reserve(cl.insert_moves.size());
+    for (const InsertMove &im : cl.insert_moves) {
+      if ((im.heuristic_value > threshold) ||
+          logically_equal(im.heuristic_value, threshold)) {
+        rcl.push_back(im);
+      }
+    }
+    size_t random_im_idx = rng.GenerateUniformInt(0, rcl.size() - 1);
+    InsertMove im = rcl[random_im_idx];
+    c.p.insert(im.vertex_after, im.free_vertex);
+    RemoveVertex(c.free_vertices, im.free_vertex);
+    c.cost += im.cost_increase;
+    cl.insert_moves.clear();
+    cl = GenerateInsertMoves(c.p, c.free_vertices, properties, rewards, probs,
+                             costs, c.cost);
+  }
+  // TODO: Perform 2-opt
   return c;
 }
 
-// TODO: Fill me in
 // TODO: Docstring
-Vector<InsertMove> GenerateInsertMoves(const Path &p,
-                                       const Vector<VertexId> &free_vertices,
-                                       const Vector<double_t> &rewards,
-                                       const Vector<double_t> &probs,
-                                       const Matrix<double_t> &costs,
-                                       const double_t max_cost) {}
+CandidateList GenerateInsertMoves(const Path &p,
+                                  const Vector<VertexId> &free_vertices,
+                                  const Properties &properties,
+                                  const Vector<double_t> &rewards,
+                                  const Vector<double_t> &probs,
+                                  const Matrix<double_t> &costs,
+                                  const double_t current_cost) {
+  CandidateList cl;
+  cl.insert_moves.reserve(free_vertices.size() * (p.size() - 1));
+  cl.heuristic_min = std::numeric_limits<double_t>::infinity();
+  cl.heuristic_max = -std::numeric_limits<double_t>::infinity();
+  for (const VertexId free_vertex : free_vertices) {
+    Path::const_iterator path_it = p.begin();
+    for (; path_it < p.end() - 1; ++path_it) {
+      InsertMoveRet im =
+          GenerateInsertMove(free_vertex, path_it, path_it + 1, properties,
+                             rewards, probs, costs, current_cost);
+      if (im.first) {
+        cl.insert_moves.push_back(im.second);
+        if (im.second.heuristic_value > cl.heuristic_max) {
+          cl.heuristic_max = im.second.heuristic_value;
+        }
+        if (im.second.heuristic_value < cl.heuristic_min) {
+          cl.heuristic_min = im.second.heuristic_value;
+        }
+      }
+    }
+  }
+  return cl;
+}
 
-// TODO: Fill me in
 // TODO: Docstring
 InsertMoveRet GenerateInsertMove(
     VertexId free_vertex, Path::const_iterator vertex_before,
-    Path::const_iterator vertex_after, const Vector<double_t> &rewards,
-    const Vector<double_t> &probs, const Matrix<double_t> &costs,
-    const double_t current_cost, const double_t max_cost) {
+    Path::const_iterator vertex_after, const Properties &properties,
+    const Vector<double_t> &rewards, const Vector<double_t> &probs,
+    const Matrix<double_t> &costs, const double_t current_cost) {
   InsertMoveRet im;
   im.first = false;
   // Calcuclate cost increase
   im.second.cost_increase = costs[*vertex_before][free_vertex] +
                             costs[free_vertex][*vertex_after] -
                             costs[*vertex_before][*vertex_after];
-  if ((current_cost + im.second.cost_increase < max_cost) ||
-      logically_equal(current_cost + im.second.cost_increase, max_cost)) {
+  if ((current_cost + im.second.cost_increase < properties.maximum_cost) ||
+      logically_equal(current_cost + im.second.cost_increase,
+                      properties.maximum_cost)) {
     // Insert can be performed
     im.first = true;
-    // TODO: Check different policies for score. I.e. if we take the probabilities into account
+    // TODO: Check different policies for score. I.e. if we take the
+    // probabilities into account
+    im.second.vertex_before = vertex_before;
+    im.second.vertex_after = vertex_after;
+    im.second.free_vertex = free_vertex;
     im.second.score = rewards[free_vertex];
-    im.second.heuristic_value = im.second.score/im.second.cost_increase;
+    im.second.heuristic_value = im.second.score / im.second.cost_increase;
   } else {
     // Insert can't be performed
     im.first = false;
