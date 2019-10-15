@@ -272,6 +272,34 @@ TEST(POPGATest, generateInsertMovesTest) {
   EXPECT_DOUBLE_EQ(cl.heuristic_min, expected_heuristic_min);
 }
 
+TEST(POPGATest, initialisePopulationTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 7.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+  Vector<pop_ga::Chromosome> pop =
+      pop_ga::InitialisePopulation(props, r, probs, costs, g);
+  EXPECT_EQ(pop.size(), props.population_size);
+  for (pop_ga::Chromosome c : pop) {
+    EXPECT_LE(c.cost, props.maximum_cost);
+    EXPECT_EQ(c.p.front(), props.start_id);
+    EXPECT_EQ(c.p.back(), props.end_id);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleMock(&argc, argv);
   return RUN_ALL_TESTS();

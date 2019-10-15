@@ -35,6 +35,7 @@ struct Properties {
   double_t cost_per_time_unit;
   double_t grasp_greediness;
   bool grasp_estimated_reward;
+  size_t population_size;
 };
 
 struct InsertMove {
@@ -95,7 +96,11 @@ void RemoveVertex(Vector<VertexId> &v, VertexId vertex);
 
 // TODO: Fill me in
 // TODO: Docstring
-Vector<Chromosome> InitialisePopulation();
+Vector<Chromosome> InitialisePopulation(const Properties &properties,
+                                        const Vector<double_t> &rewards,
+                                        const Vector<double_t> &probs,
+                                        const Matrix<double_t> &costs,
+                                        rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring

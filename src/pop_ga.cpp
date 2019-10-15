@@ -264,5 +264,20 @@ InsertMoveRet GenerateInsertMove(
   }
   return im;
 }
+
+// TODO: Fill me in
+// TODO: Docstring
+Vector<Chromosome> InitialisePopulation(const Properties &properties,
+                                        const Vector<double_t> &rewards,
+                                        const Vector<double_t> &probs,
+                                        const Matrix<double_t> &costs,
+                                        rng::RandomNumberGenerator &rng) {
+  Vector<Chromosome> pop;
+  pop.reserve(properties.population_size);
+  for (size_t i = 0; i < properties.population_size; ++i) {
+    pop.push_back(GenerateChromosome(properties, rewards, probs, costs, rng));
+  }
+  return pop;
+}
 }  // namespace pop_ga
 
