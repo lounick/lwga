@@ -300,6 +300,30 @@ TEST(POPGATest, initialisePopulationTest) {
   }
 }
 
+// TODO: Fill me in
+TEST(POPGATest, tournamentSelectTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, cxSuccessTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, cxNoCommonVertexTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, cxInfeasibleOffspringTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, mutateAddVertexSuccessTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, mutateAddVertexInfeasibleTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, mutateRemoveVertexSuccessTest) { EXPECT_EQ(1, 0); }
+
+// TODO: Fill me in
+TEST(POPGATest, mutateRemoveVertexEmptyTest) { EXPECT_EQ(1, 0); }
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleMock(&argc, argv);
   return RUN_ALL_TESTS();
