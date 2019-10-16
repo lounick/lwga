@@ -322,7 +322,16 @@ Vector<VertexId> GetCommonVertices(const Path &p1, const Path &p2) {
 void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
                const Vector<double_t> &rewards, const Vector<double_t> &probs,
                const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {
-  Vector<VertexId> common_vertices;
+  Vector<VertexId> common_vertices = GetCommonVertices(p1.p, p2.p);
+
+  if (common_vertices.empty()) {
+    return;
+  }
+
+  size_t random_vertex_idx =
+      rng.GenerateUniformInt(0, common_vertices.size() - 1);
+  VertexId vertex = common_vertices[random_vertex_idx];
+
 }
 
 // TODO: Fill me in
