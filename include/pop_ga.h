@@ -20,7 +20,7 @@ enum class GenerationMethod {
 struct Chromosome {
   Path p;
   Vector<VertexId> free_vertices;
-  double_t cost;
+  double_t total_cost;
   double_t reward;
   double_t fitness;
 };
@@ -90,9 +90,14 @@ double_t CalculateExpectedTimeObjective(const Path &p,
                                         const Matrix<double_t> &costs,
                                         double_t cost_per_time_unit);
 
+
 // TODO: Fill me in
 // TODO: Docstring
 void RemoveVertex(Vector<VertexId> &v, VertexId vertex);
+
+// TODO: Fill me in
+// TODO: Docstring
+Vector<VertexId> GetCommonVertices(const Path &p1, const Path &p2);
 
 // TODO: Fill me in
 // TODO: Docstring
@@ -144,7 +149,9 @@ InsertMoveRet GenerateInsertMove(
 
 // TODO: Fill me in
 // TODO: Docstring
-size_t TournamentSelect();
+Chromosome TournamentSelect(const Vector<Chromosome> &pop,
+                            size_t tournament_size,
+                            rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring
@@ -152,11 +159,15 @@ void SelectNewPopulation();
 
 // TODO: Fill me in
 // TODO: Docstring
-void Crossover();
+void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
+               const Vector<double_t> &rewards, const Vector<double_t> &probs,
+               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring
-void Mutate();
+void Mutate(Chromosome &c, const Properties &properties,
+            const Vector<double_t> &rewards, const Vector<double_t> &probs,
+            const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring

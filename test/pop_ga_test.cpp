@@ -121,7 +121,7 @@ TEST(POPGATest, generateRandomChromosomeCostTest) {
       .WillOnce(::testing::ReturnArg<1>());
   pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, r, probs, costs, g);
   double_t path_cost = 4.0;
-  EXPECT_DOUBLE_EQ(c.cost, path_cost);
+  EXPECT_DOUBLE_EQ(c.total_cost, path_cost);
   EXPECT_EQ(c.p.front(), props.start_id);
   EXPECT_EQ(c.p[1], 1);
   EXPECT_EQ(c.p.back(), props.end_id);
@@ -147,7 +147,7 @@ TEST(POPGATest, generateRandomChromosomeCostLETest) {
   for (size_t i = 0; i < num_executions; ++i) {
     pop_ga::Chromosome c =
         pop_ga::GenerateChromosome(props, r, probs, costs, g);
-    EXPECT_LE(c.cost, props.maximum_cost);
+    EXPECT_LE(c.total_cost, props.maximum_cost);
     EXPECT_EQ(c.p.front(), props.start_id);
     EXPECT_EQ(c.p.back(), props.end_id);
   }
@@ -175,17 +175,17 @@ TEST(POPGATest, generateGRASPChromosomeTest) {
       .Times(1)
       .WillOnce(::testing::Return(0));
   pop_ga::Chromosome c = pop_ga::GenerateChromosome(props, r, probs, costs, g);
-  EXPECT_LE(c.cost, props.maximum_cost);
-  EXPECT_GT(c.cost, 0);
+  EXPECT_LE(c.total_cost, props.maximum_cost);
+  EXPECT_GT(c.total_cost, 0);
   double_t expected_path_cost = 4.0;
-  EXPECT_DOUBLE_EQ(c.cost, expected_path_cost);
+  EXPECT_DOUBLE_EQ(c.total_cost, expected_path_cost);
   VertexId expected_inserted_vertex = 1;
   EXPECT_EQ(c.p[1], expected_inserted_vertex);
-  //  EXPECT_TRUE((c.cost > 0.0) && (c.cost <= props.maximum_cost));
+  //  EXPECT_TRUE((c.total_cost > 0.0) && (c.total_cost <= props.maximum_cost));
   // using ::testing::AllOf;
   // using ::testing::Gt;
   // using ::testing::Le;
-  // EXPECT_THAT(c.cost, AllOf(Gt(0), Le(props.maximum_cost)));
+  // EXPECT_THAT(c.total_cost, AllOf(Gt(0), Le(props.maximum_cost)));
 }
 
 TEST(POPGATest, generateInsertMoveSuccessTest) {
@@ -294,35 +294,300 @@ TEST(POPGATest, initialisePopulationTest) {
       pop_ga::InitialisePopulation(props, r, probs, costs, g);
   EXPECT_EQ(pop.size(), props.population_size);
   for (pop_ga::Chromosome c : pop) {
-    EXPECT_LE(c.cost, props.maximum_cost);
+    EXPECT_LE(c.total_cost, props.maximum_cost);
     EXPECT_EQ(c.p.front(), props.start_id);
     EXPECT_EQ(c.p.back(), props.end_id);
   }
 }
 
 // TODO: Fill me in
-TEST(POPGATest, tournamentSelectTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, tournamentSelectTest) {
+  Vector<pop_ga::Chromosome> pop;
+  pop.reserve(3);
+  for (size_t i = 0; i < 3; ++i) {
+    pop_ga::Chromosome c;
+    c.fitness = i;
+    pop.push_back(c);
+  }
+  size_t tournament_size = 3;
+  rng::RandomNumberGenerator rng;
+  pop_ga::Chromosome best = pop_ga::TournamentSelect(pop, tournament_size, rng);
+  double_t best_fitness = 2.0;
+  EXPECT_DOUBLE_EQ(best.fitness, best_fitness);
+}
+
+TEST(POPGATest, getCommonVerticesTestSuccess) {
+  Path p1{0, 1, 2, 3, 5};
+  Path p2{0, 2, 3, 4, 5};
+  Vector<VertexId> common_vertices = pop_ga::GetCommonVertices(p1, p2);
+  Vector<VertexId> expected_vertices{2, 3};
+  EXPECT_THAT(common_vertices, ::testing::ElementsAreArray(expected_vertices));
+}
+
+TEST(POPGATest, getCommonVerticesTestSuccessSingle) {
+  Path p1{0, 1, 2, 5};
+  Path p2{0, 2, 4, 5};
+  Vector<VertexId> common_vertices = pop_ga::GetCommonVertices(p1, p2);
+  Vector<VertexId> expected_vertices{2};
+  EXPECT_THAT(common_vertices, ::testing::ElementsAreArray(expected_vertices));
+}
+
+TEST(POPGATest, getCommonVerticesTestNoCommon) {
+  Path p1{0, 1, 5};
+  Path p2{0, 2, 5};
+  Vector<VertexId> common_vertices = pop_ga::GetCommonVertices(p1, p2);
+  Vector<VertexId> expected_vertices{};
+  EXPECT_THAT(common_vertices, ::testing::ElementsAreArray(expected_vertices));
+}
+
+TEST(POPGATest, getCommonVerticesTestEmptyPath) {
+  Path p1{0, 5};
+  Path p2{0, 2, 5};
+  Vector<VertexId> common_vertices = pop_ga::GetCommonVertices(p1, p2);
+  Vector<VertexId> expected_vertices{};
+  EXPECT_THAT(common_vertices, ::testing::ElementsAreArray(expected_vertices));
+}
 
 // TODO: Fill me in
-TEST(POPGATest, cxSuccessTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, cxSuccessTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 28.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome p1;
+  p1.p = {0, 1, 2, 4, 5};
+  p1.total_cost = 28.0;
+  pop_ga::Chromosome p2;
+  p2.p = {0, 2, 3, 5};
+  p2.total_cost = 20.0;
+  pop_ga::Chromosome c1;
+  c1.p = {0, 1, 2, 3, 5};
+  c1.total_cost = 24.0;
+  pop_ga::Chromosome c2;
+  c2.p = {0, 2, 4, 5};
+  c2.total_cost = 24.0;
+  pop_ga::Crossover(p1, p2, props, r, probs, costs, g);
+  EXPECT_THAT(p1.p, ::testing::ElementsAreArray(c1.p));
+  EXPECT_DOUBLE_EQ(p1.total_cost, c1.total_cost);
+  EXPECT_THAT(p2.p, ::testing::ElementsAreArray(c2.p));
+  EXPECT_DOUBLE_EQ(p2.total_cost, c2.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, cxNoCommonVertexTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, cxNoCommonVertexTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 38.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome p1;
+  p1.p = {0, 1, 2, 4, 5};
+  p1.total_cost = 28.0;
+  pop_ga::Chromosome p2;
+  p2.p = {0, 4, 2, 3, 5};
+  p2.total_cost = 38.0;
+  pop_ga::Chromosome c1;
+  c1.p = {0, 1, 2, 3, 5};
+  c1.total_cost = 24.0;
+  pop_ga::Chromosome c2;
+  c2.p = {0, 4, 2, 5};
+  c2.total_cost = 24.0;
+  pop_ga::Crossover(p1, p2, props, r, probs, costs, g);
+  EXPECT_THAT(p1.p, ::testing::ElementsAreArray(c1.p));
+  EXPECT_DOUBLE_EQ(p1.total_cost, c1.total_cost);
+  EXPECT_THAT(p2.p, ::testing::ElementsAreArray(c2.p));
+  EXPECT_DOUBLE_EQ(p2.total_cost, c2.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, cxInfeasibleOffspringTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, cxInfeasibleOffspringTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 24.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome p1;
+  p1.p = {0, 1, 2, 5};
+  p1.total_cost = 10.0;
+  pop_ga::Chromosome p2;
+  p2.p = {0, 2, 4, 5};
+  p2.total_cost = 24.0;
+  pop_ga::Chromosome c1;
+  c1.p = {0, 1, 2, 5};
+  c1.total_cost = 10.0;
+  pop_ga::Chromosome c2;
+  c2.p = {0, 2, 5};
+  c2.total_cost = 6.0;
+  pop_ga::Crossover(p1, p2, props, r, probs, costs, g);
+  EXPECT_THAT(p1.p, ::testing::ElementsAreArray(c1.p));
+  EXPECT_DOUBLE_EQ(p1.total_cost, c1.total_cost);
+  EXPECT_THAT(p2.p, ::testing::ElementsAreArray(c2.p));
+  EXPECT_DOUBLE_EQ(p2.total_cost, c2.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, mutateAddVertexSuccessTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, mutateAddVertexSuccessTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 10.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome c;
+  c.p = {0, 1, 5};
+  c.total_cost = 4.0;
+  pop_ga::Chromosome m;
+  m.p = {0, 2, 1, 5};
+  m.total_cost = 10.0;
+  Mutate(c, props, r, probs, costs, g);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, mutateAddVertexInfeasibleTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, mutateAddVertexInfeasibleTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 4.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome c;
+  c.p = {0, 1, 5};
+  c.total_cost = 4.0;
+  pop_ga::Chromosome m;
+  m.p = {0, 1, 5};
+  m.total_cost = 4.0;
+  Mutate(c, props, r, probs, costs, g);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, mutateRemoveVertexSuccessTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, mutateRemoveVertexSuccessTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 24.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome c;
+  c.p = {0, 1, 2, 5};
+  c.total_cost = 10.0;
+  pop_ga::Chromosome m;
+  m.p = {0, 1, 5};
+  m.total_cost = 4.0;
+  Mutate(c, props, r, probs, costs, g);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
 
 // TODO: Fill me in
-TEST(POPGATest, mutateRemoveVertexEmptyTest) { EXPECT_EQ(1, 0); }
+TEST(POPGATest, mutateRemoveVertexEmptyTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 24.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+  rng::RandomNumberGenerator g;
+
+  pop_ga::Chromosome c;
+  c.p = {0, 5};
+  c.total_cost = 0.0;
+  pop_ga::Chromosome m;
+  m.p = {0, 5};
+  m.total_cost = 0.0;
+  Mutate(c, props, r, probs, costs, g);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleMock(&argc, argv);

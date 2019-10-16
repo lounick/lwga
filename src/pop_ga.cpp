@@ -1,6 +1,7 @@
 #include "pop_ga.h"
 #include <algorithm>
 #include <limits>
+#include <set>
 
 namespace pop_ga {
 // TODO: Fill me in
@@ -103,7 +104,7 @@ void RemoveVertex(Vector<VertexId> &v, VertexId vertex) {
 Chromosome InitialiseEmptyChromosome(const Properties &properties,
                                      const Matrix<double_t> costs) {
   Chromosome c;
-  c.cost = 0.0;
+  c.total_cost = 0.0;
   c.reward = 0.0;
   c.fitness = 0.0;
   c.free_vertices = Vector<VertexId>(costs.size());
@@ -146,11 +147,11 @@ Chromosome GenerateRandomChromosome(const Properties &properties,
   while (!done) {
     size_t random_idx = rng.GenerateUniformInt(0, c.free_vertices.size() - 1);
     VertexId vertex = c.free_vertices[random_idx];
-    double_t total_cost =
-        c.cost + costs[c.p.back()][vertex] + costs[vertex][properties.end_id];
+    double_t total_cost = c.total_cost + costs[c.p.back()][vertex] +
+                          costs[vertex][properties.end_id];
     if (total_cost < properties.maximum_cost ||
         logically_equal(total_cost, properties.maximum_cost)) {
-      c.cost += costs[c.p.back()][vertex];
+      c.total_cost += costs[c.p.back()][vertex];
       c.p.push_back(vertex);
       RemoveVertex(c.free_vertices, vertex);
     } else {
@@ -160,7 +161,7 @@ Chromosome GenerateRandomChromosome(const Properties &properties,
       done = true;
     }
   }
-  c.cost += costs[c.p.back()][properties.end_id];
+  c.total_cost += costs[c.p.back()][properties.end_id];
   c.p.push_back(properties.end_id);
   return c;
 }
@@ -174,9 +175,9 @@ Chromosome GenerateGRASPChromosome(const Properties &properties,
   Chromosome c = InitialiseEmptyChromosome(properties, costs);
   c.p.push_back(properties.start_id);
   c.p.push_back(properties.end_id);
-  c.cost = costs[properties.start_id][properties.end_id];
+  c.total_cost = costs[properties.start_id][properties.end_id];
   CandidateList cl = GenerateInsertMoves(c.p, c.free_vertices, properties,
-                                         rewards, probs, costs, c.cost);
+                                         rewards, probs, costs, c.total_cost);
   while (!cl.insert_moves.empty()) {
     double_t threshold =
         cl.heuristic_min +
@@ -193,10 +194,10 @@ Chromosome GenerateGRASPChromosome(const Properties &properties,
     InsertMove im = rcl[random_im_idx];
     c.p.insert(im.vertex_after, im.free_vertex);
     RemoveVertex(c.free_vertices, im.free_vertex);
-    c.cost += im.cost_increase;
+    c.total_cost += im.cost_increase;
     cl.insert_moves.clear();
     cl = GenerateInsertMoves(c.p, c.free_vertices, properties, rewards, probs,
-                             costs, c.cost);
+                             costs, c.total_cost);
   }
   // TODO: Perform 2-opt
   return c;
@@ -279,5 +280,55 @@ Vector<Chromosome> InitialisePopulation(const Properties &properties,
   }
   return pop;
 }
+
+// TODO: Fill me in
+// TODO: Docstring
+Chromosome TournamentSelect(const Vector<Chromosome> &pop,
+                            size_t tournament_size,
+                            rng::RandomNumberGenerator &rng) {
+  Chromosome best;
+  double_t best_fitness = -std::numeric_limits<double_t>::infinity();
+  Vector<size_t> indices =
+      rng.SampleRandomIndices(0, pop.size() - 1, tournament_size);
+  for (const size_t &idx : indices) {
+    if (pop[idx].fitness > best_fitness) {
+      best_fitness = pop[idx].fitness;
+      best = pop[idx];
+    }
+  }
+  return best;
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+Vector<VertexId> GetCommonVertices(const Path &p1, const Path &p2) {
+  Vector<VertexId> intersection;
+
+  if (p1.size() < 3 || p2.size() < 3) {
+    return intersection;
+  }
+
+  std::set<VertexId> p1_seen{p1.begin() + 1, p1.end() - 1};
+  std::set<VertexId> p2_seen{p2.begin() + 1, p2.end() - 1};
+
+  std::set_intersection(p1_seen.begin(), p1_seen.end(), p2_seen.begin(),
+                        p2_seen.end(), std::back_inserter(intersection));
+
+  return intersection;
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
+               const Vector<double_t> &rewards, const Vector<double_t> &probs,
+               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {
+  Vector<VertexId> common_vertices;
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+void Mutate(Chromosome &c, const Properties &properties,
+            const Vector<double_t> &rewards, const Vector<double_t> &probs,
+            const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {}
 }  // namespace pop_ga
 
