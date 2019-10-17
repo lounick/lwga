@@ -311,6 +311,10 @@ bool logically_equal(double a, double b, double error_factor) {
               error_factor;
 }
 
+bool less_equal(double_t a, double_t b, double_t error_factor) {
+  return a < b || logically_equal(a, b, error_factor);
+}
+
 std::pair<Vector<uint_fast32_t>, double_t> straighten_path(
     Matrix<Matrix<double_t>> &dubins_cost_mat,
     const std::shared_ptr<const std::vector<Point2D>> nodes, double_t rho,

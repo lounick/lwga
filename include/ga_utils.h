@@ -65,6 +65,8 @@ std::pair<std::vector<Point2D>, std::vector<double>> generate_grid(double x_size
 
 bool logically_equal(double a, double b, double error_factor = 1.0);
 
+bool less_equal(double_t a, double_t b, double_t error_factor = 1.0);
+
 template<typename T>
 void print_vector(Vector<T> v, std::ostream &out = std::cout) {
   out << "[";
