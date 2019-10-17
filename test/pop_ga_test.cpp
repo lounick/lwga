@@ -169,7 +169,6 @@ TEST(POPGATest, generateGRASPChromosomeTest) {
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
 
-  // TODO: REPLACE WITH MOCK
   MockRNG g;
   EXPECT_CALL(g, GenerateUniformInt(::testing::_, ::testing::_))
       .Times(1)
@@ -388,7 +387,7 @@ TEST(POPGATest, cxSuccessTest) {
 }
 
 // TODO: Fill me in
-TEST(POPGATest, cxNoCommonVertexTest) {
+TEST(POPGATest, cxRemoveDuplicateVertexTest) {
   pop_ga::Properties props;
   props.generation_method = pop_ga::GenerationMethod::GRASP;
   props.start_id = 0;
@@ -405,8 +404,11 @@ TEST(POPGATest, cxNoCommonVertexTest) {
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
-  rng::RandomNumberGenerator g;
 
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformInt(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0));
   pop_ga::Chromosome p1;
   p1.p = {0, 1, 2, 4, 5};
   p1.total_cost = 28.0;
@@ -587,6 +589,20 @@ TEST(POPGATest, mutateRemoveVertexEmptyTest) {
   Mutate(c, props, r, probs, costs, g);
   EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
   EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
+
+TEST(POPGATest, generateCXChromosomeTest) {
+  pop_ga::Chromosome c1;
+  c1.p = {0, 1, 2, 3, 6};
+  c1.free_vertices = {4, 5};
+  pop_ga::Chromosome c2;
+  c2.p = {0, 1, 2, 4, 6};
+  c2.free_vertices = {3, 5};
+  VertexId common_vertex = 2;
+  pop_ga::Chromosome c = pop_ga::GenerateCXChromosome(c1, c2, common_vertex);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(c2.p));
+  EXPECT_THAT(c.free_vertices,
+              ::testing::UnorderedElementsAreArray(c2.free_vertices));
 }
 
 int main(int argc, char **argv) {

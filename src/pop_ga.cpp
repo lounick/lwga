@@ -97,7 +97,7 @@ double_t CalculateExpectedTimeObjective(const Path &p,
 
 // TODO: Docstring
 void RemoveVertex(Vector<VertexId> &v, VertexId vertex) {
-  v.erase(std::remove(v.begin(), v.end(), vertex));
+  v.erase(std::remove(v.begin(), v.end(), vertex), v.end());
 }
 
 // TODO: Docstring
@@ -317,6 +317,35 @@ Vector<VertexId> GetCommonVertices(const Path &p1, const Path &p2) {
   return intersection;
 }
 
+// TODO: Docstring
+Chromosome GenerateCXChromosome(const Chromosome &p1, const Chromosome &p2,
+                                VertexId split_vertex) {
+  Chromosome ret;
+  Path::const_iterator p1_vertex_pos =
+      std::find(p1.p.begin(), p1.p.end(), split_vertex);
+  Path::const_iterator p2_vertex_pos =
+      std::find(p2.p.begin(), p2.p.end(), split_vertex);
+
+  ret.free_vertices = p1.free_vertices;
+
+  ret.p.insert(ret.p.end(), p1.p.begin(), p1_vertex_pos);
+
+  Path::const_iterator p1_iter = p1_vertex_pos + 1;
+  for (; p1_iter < p1.p.end() - 1; ++p1_iter) {
+    ret.free_vertices.push_back(*p1_iter);
+  }
+  
+  std::set<VertexId> ret_seen(ret.p.begin(), ret.p.end());
+  for (; p2_vertex_pos < p2.p.end(); ++p2_vertex_pos) {
+    auto insert_res = ret_seen.insert(*p2_vertex_pos);
+    if (insert_res.second) {
+      ret.p.push_back(*p2_vertex_pos);
+      RemoveVertex(ret.free_vertices, *p2_vertex_pos);
+    }
+  }
+  return ret;
+}
+
 // TODO: Fill me in
 // TODO: Docstring
 void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
@@ -332,6 +361,19 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
       rng.GenerateUniformInt(0, common_vertices.size() - 1);
   VertexId vertex = common_vertices[random_vertex_idx];
 
+  Chromosome off1 = GenerateCXChromosome(p1, p2, vertex);
+  Chromosome off2 = GenerateCXChromosome(p2, p1, vertex);
+
+  EvaluateChromosome(off1, properties, rewards, probs, costs);
+  EvaluateChromosome(off2, properties, rewards, probs, costs);
+
+  if (less_equal(off1.total_cost, properties.maximum_cost)) {
+    p1 = off1;
+  }
+
+  if (less_equal(off2.total_cost, properties.maximum_cost)) {
+    p2 = off2;
+  }
 }
 
 // TODO: Fill me in
@@ -339,5 +381,18 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
 void Mutate(Chromosome &c, const Properties &properties,
             const Vector<double_t> &rewards, const Vector<double_t> &probs,
             const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {}
+
+// TODO: Fill me in
+// TODO: Docstring
+void EvaluateChromosome(Chromosome &c, const Properties &properties,
+                        const Vector<double_t> &rewards,
+                        const Vector<double_t> &probs,
+                        const Matrix<double_t> &costs) {
+  c.total_cost = CalculateTotalCost(c.p, costs);
+  c.expected_cost = CalculateExpectedCost(c.p, costs, probs);
+  c.expected_reward = CalculateExpectedReward(c.p, rewards, probs);
+  c.fitness =
+      c.expected_reward - properties.cost_per_time_unit * c.expected_cost;
+}
 }  // namespace pop_ga
 

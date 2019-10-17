@@ -21,7 +21,9 @@ struct Chromosome {
   Path p;
   Vector<VertexId> free_vertices;
   double_t total_cost;
+  double_t expected_cost;
   double_t reward;
+  double_t expected_reward;
   double_t fitness;
 };
 
@@ -90,7 +92,6 @@ double_t CalculateExpectedTimeObjective(const Path &p,
                                         const Matrix<double_t> &costs,
                                         double_t cost_per_time_unit);
 
-
 // TODO: Fill me in
 // TODO: Docstring
 void RemoveVertex(Vector<VertexId> &v, VertexId vertex);
@@ -98,6 +99,10 @@ void RemoveVertex(Vector<VertexId> &v, VertexId vertex);
 // TODO: Fill me in
 // TODO: Docstring
 Vector<VertexId> GetCommonVertices(const Path &p1, const Path &p2);
+
+// TODO: Docstring
+Chromosome GenerateCXChromosome(const Chromosome &p1, const Chromosome &p2,
+                                VertexId split_vertex);
 
 // TODO: Fill me in
 // TODO: Docstring
@@ -171,7 +176,10 @@ void Mutate(Chromosome &c, const Properties &properties,
 
 // TODO: Fill me in
 // TODO: Docstring
-void EvaluateChromosome();
+void EvaluateChromosome(Chromosome &c, const Properties &properties,
+                        const Vector<double_t> &rewards,
+                        const Vector<double_t> &probs,
+                        const Matrix<double_t> &costs);
 
 // TODO: Fill me in
 // TODO: Docstring
