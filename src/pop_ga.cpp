@@ -380,7 +380,27 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
 // TODO: Docstring
 void Mutate(Chromosome &c, const Properties &properties,
             const Vector<double_t> &rewards, const Vector<double_t> &probs,
-            const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {}
+            const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {
+  double_t add_prob = rng.GenerateUniformDouble(0.0, 1.0);
+  if (add_prob < properties.mutate_add_prob) {
+    MutateAdd(c, properties, rewards, probs, costs, rng);
+  } else {
+    MutateAdd(c, properties, rewards, probs, costs, rng);
+  }
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+void MutateRemove(Chromosome &c, const Properties &properties,
+                  const Vector<double_t> &rewards,
+                  const Vector<double_t> &probs, const Matrix<double_t> &costs,
+                  rng::RandomNumberGenerator &rng) {}
+
+// TODO: Fill me in
+// TODO: Docstring
+void MutateAdd(Chromosome &c, const Properties &properties,
+               const Vector<double_t> &rewards, const Vector<double_t> &probs,
+               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {}
 
 // TODO: Fill me in
 // TODO: Docstring

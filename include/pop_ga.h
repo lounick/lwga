@@ -38,6 +38,7 @@ struct Properties {
   double_t grasp_greediness;
   bool grasp_estimated_reward;
   size_t population_size;
+  double_t mutate_add_prob;
 };
 
 struct InsertMove {
@@ -173,6 +174,19 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
 void Mutate(Chromosome &c, const Properties &properties,
             const Vector<double_t> &rewards, const Vector<double_t> &probs,
             const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng);
+
+// TODO: Fill me in
+// TODO: Docstring
+void MutateRemove(Chromosome &c, const Properties &properties,
+                  const Vector<double_t> &rewards,
+                  const Vector<double_t> &probs, const Matrix<double_t> &costs,
+                  rng::RandomNumberGenerator &rng);
+
+// TODO: Fill me in
+// TODO: Docstring
+void MutateAdd(Chromosome &c, const Properties &properties,
+               const Vector<double_t> &rewards, const Vector<double_t> &probs,
+               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring
