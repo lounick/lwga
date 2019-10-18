@@ -478,6 +478,7 @@ TEST(POPGATest, mutateAddVertexSuccessTest) {
   props.grasp_greediness = 0.5;
   props.grasp_estimated_reward = false;
   props.population_size = 100;
+  props.mutate_add_prob = 0.5;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -485,10 +486,17 @@ TEST(POPGATest, mutateAddVertexSuccessTest) {
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
-  rng::RandomNumberGenerator g;
 
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformDouble(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0.25));
+  EXPECT_CALL(g, GenerateUniformInt(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0));
   pop_ga::Chromosome c;
   c.p = {0, 1, 5};
+  c.free_vertices = {2, 3, 4};
   c.total_cost = 4.0;
   pop_ga::Chromosome m;
   m.p = {0, 2, 1, 5};
@@ -509,6 +517,7 @@ TEST(POPGATest, mutateAddVertexInfeasibleTest) {
   props.grasp_greediness = 0.5;
   props.grasp_estimated_reward = false;
   props.population_size = 100;
+  props.mutate_add_prob = 0.5;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -516,10 +525,53 @@ TEST(POPGATest, mutateAddVertexInfeasibleTest) {
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
-  rng::RandomNumberGenerator g;
 
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformDouble(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0.25));
+  EXPECT_CALL(g, GenerateUniformInt(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0));
   pop_ga::Chromosome c;
   c.p = {0, 1, 5};
+  c.free_vertices = {2, 3, 4};
+  c.total_cost = 4.0;
+  pop_ga::Chromosome m;
+  m.p = {0, 1, 5};
+  m.total_cost = 4.0;
+  Mutate(c, props, r, probs, costs, g);
+  EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
+}
+
+// TODO: Fill me in
+TEST(POPGATest, mutateAddVertexNoFreeTest) {
+  pop_ga::Properties props;
+  props.generation_method = pop_ga::GenerationMethod::GRASP;
+  props.start_id = 0;
+  props.end_id = 5;
+  props.maximum_cost = 4.0;
+  props.cost_per_time_unit = 1.0;
+  props.grasp_greediness = 0.5;
+  props.grasp_estimated_reward = false;
+  props.population_size = 100;
+  props.mutate_add_prob = 0.5;
+
+  Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
+  Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
+  Matrix<double_t> costs{
+      {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
+      {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
+      {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
+
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformDouble(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0.25));
+  pop_ga::Chromosome c;
+  c.p = {0, 1, 5};
+  c.free_vertices = {};
   c.total_cost = 4.0;
   pop_ga::Chromosome m;
   m.p = {0, 1, 5};
@@ -540,6 +592,7 @@ TEST(POPGATest, mutateRemoveVertexSuccessTest) {
   props.grasp_greediness = 0.5;
   props.grasp_estimated_reward = false;
   props.population_size = 100;
+  props.mutate_add_prob = 0.5;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -547,16 +600,23 @@ TEST(POPGATest, mutateRemoveVertexSuccessTest) {
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
-  rng::RandomNumberGenerator g;
 
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformDouble(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0.75));
   pop_ga::Chromosome c;
   c.p = {0, 1, 2, 5};
+  c.free_vertices = {3, 4};
   c.total_cost = 10.0;
   pop_ga::Chromosome m;
   m.p = {0, 1, 5};
+  m.free_vertices = {3, 4, 2};
   m.total_cost = 4.0;
   Mutate(c, props, r, probs, costs, g);
   EXPECT_THAT(c.p, ::testing::ElementsAreArray(m.p));
+  EXPECT_THAT(c.free_vertices,
+              ::testing::UnorderedElementsAreArray(m.free_vertices));
   EXPECT_DOUBLE_EQ(c.total_cost, m.total_cost);
 }
 
@@ -578,8 +638,11 @@ TEST(POPGATest, mutateRemoveVertexEmptyTest) {
       {0.0, 2.0, 3.0, 7.0, 9.0, 0.0},   {2.0, 0.0, 5.0, 5.0, 7.0, 2.0},
       {3.0, 5.0, 0.0, 10.0, 12.0, 3.0}, {7.0, 5.0, 10.0, 0.0, 2.0, 7.0},
       {9.0, 7.0, 12.0, 2.0, 0.0, 9.0},  {0.0, 2.0, 3.0, 7.0, 9.0, 0.0}};
-  rng::RandomNumberGenerator g;
 
+  MockRNG g;
+  EXPECT_CALL(g, GenerateUniformDouble(::testing::_, ::testing::_))
+      .Times(1)
+      .WillOnce(::testing::Return(0.75));
   pop_ga::Chromosome c;
   c.p = {0, 5};
   c.total_cost = 0.0;

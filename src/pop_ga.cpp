@@ -334,7 +334,7 @@ Chromosome GenerateCXChromosome(const Chromosome &p1, const Chromosome &p2,
   for (; p1_iter < p1.p.end() - 1; ++p1_iter) {
     ret.free_vertices.push_back(*p1_iter);
   }
-  
+
   std::set<VertexId> ret_seen(ret.p.begin(), ret.p.end());
   for (; p2_vertex_pos < p2.p.end(); ++p2_vertex_pos) {
     auto insert_res = ret_seen.insert(*p2_vertex_pos);
@@ -385,7 +385,7 @@ void Mutate(Chromosome &c, const Properties &properties,
   if (add_prob < properties.mutate_add_prob) {
     MutateAdd(c, properties, rewards, probs, costs, rng);
   } else {
-    MutateAdd(c, properties, rewards, probs, costs, rng);
+    MutateRemove(c, properties, rewards, probs, costs, rng);
   }
 }
 
@@ -394,13 +394,69 @@ void Mutate(Chromosome &c, const Properties &properties,
 void MutateRemove(Chromosome &c, const Properties &properties,
                   const Vector<double_t> &rewards,
                   const Vector<double_t> &probs, const Matrix<double_t> &costs,
-                  rng::RandomNumberGenerator &rng) {}
+                  rng::RandomNumberGenerator &rng) {
+  // For each internal vertex calculate the loss over travel decrease
+  // Remove the minimum one
+
+  // No vertex to remove
+  if (c.p.size() < 3) {
+    return;
+  }
+
+  double_t min_loss = std::numeric_limits<double_t>::infinity();
+  Path::iterator min_vertex = c.p.end();
+  Path::iterator it = c.p.begin() + 1;
+  for (; it < c.p.end() - 1; ++it) {
+    double_t cost_reduction = costs[*(it - 1)][*it] + costs[*it][*(it + 1)] -
+                              costs[*(it - 1)][*(it + 1)];
+    double_t reward_reduction = rewards[*it];
+    double_t loss = reward_reduction / cost_reduction;
+    if (loss < min_loss) {
+      min_loss = loss;
+      min_vertex = it;
+    }
+  }
+  c.free_vertices.push_back(*min_vertex);
+  c.p.erase(min_vertex);
+  EvaluateChromosome(c, properties, rewards, probs, costs);
+}
 
 // TODO: Fill me in
 // TODO: Docstring
 void MutateAdd(Chromosome &c, const Properties &properties,
                const Vector<double_t> &rewards, const Vector<double_t> &probs,
-               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {}
+               const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {
+  // Choose a random vertex from the free ones.
+  // Form all insert moves.
+  // Choose the best one (or maybe a random one?)
+  // If feasible to insert do it
+  if (c.free_vertices.empty()) {
+    return;
+  }
+
+  size_t random_vertex_idx =
+      rng.GenerateUniformInt(0, c.free_vertices.size() - 1);
+  VertexId random_vertex = c.free_vertices[random_vertex_idx];
+  Path::iterator it = c.p.begin();
+  InsertMove best_insert;
+  best_insert.heuristic_value = -std::numeric_limits<double_t>::infinity();
+  best_insert.vertex_before = c.p.end();
+  for (; it < c.p.end() - 1; ++it) {
+    InsertMoveRet ret =
+        GenerateInsertMove(random_vertex, it, it + 1, properties, rewards,
+                           probs, costs, c.total_cost);
+    if (ret.first) {
+      if (ret.second.heuristic_value > best_insert.heuristic_value) {
+        best_insert = ret.second;
+      }
+    }
+  }
+  if (best_insert.vertex_before != c.p.end()) {
+    c.p.insert(best_insert.vertex_after, best_insert.free_vertex);
+    RemoveVertex(c.free_vertices, best_insert.free_vertex);
+    EvaluateChromosome(c, properties, rewards, probs, costs);
+  }
+}
 
 // TODO: Fill me in
 // TODO: Docstring
