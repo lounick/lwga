@@ -23,6 +23,45 @@ enum class ProblemType {
   POP,
 };
 
+enum class EdgeWeightType {
+  EUC_2D,
+  EUC_3D,
+  MAX_2D,
+  MAX_3D,
+  CEIL_2D,
+  EXPLICIT,
+  GEO,
+  ATT,
+  XRAY1,
+  XRAY2,
+  SPECIAL,
+};
+
+enum class EdgeWeightFormat {
+  FUNCTION,
+  FULL_MATRIX,
+  UPPER_ROW,
+  LOWER_ROW,
+  UPPER_DIAG_ROW,
+  LOWER_DIAG_ROW,
+  UPPER_COL,
+  LOWER_COL,
+  UPPER_DIAG_COL,
+  LOWER_DIAG_COL,
+};
+
+enum class NodeCoordType {
+  TWO_D,
+  THREE_D,
+  NONE,
+};
+
+enum class DisplayDataType {
+  COORD_DISPLAY,
+  TWOD_DISPLAY,
+  NO_DISPLAY,
+};
+
 enum class FileSection {
   HEADER,
   DATA,
@@ -44,6 +83,10 @@ class LIBTSPReader {
   std::string problem_name_;
   ProblemType problem_type_;
   FileSection file_section_;
+  EdgeWeightType weight_type_;
+  EdgeWeightFormat weigth_format_;
+  NodeCoordType coord_type_;
+  DisplayDataType display_data_type_;
   std::ifstream file_stream_;
   Matrix<double_t> cost_mat_;
   Vector<double_t> probabilities_;
