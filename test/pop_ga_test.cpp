@@ -479,6 +479,7 @@ TEST(POPGATest, mutateAddVertexSuccessTest) {
   props.grasp_estimated_reward = false;
   props.population_size = 100;
   props.mutate_add_prob = 0.5;
+  props.num_mutations = 1;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -518,6 +519,7 @@ TEST(POPGATest, mutateAddVertexInfeasibleTest) {
   props.grasp_estimated_reward = false;
   props.population_size = 100;
   props.mutate_add_prob = 0.5;
+  props.num_mutations = 1;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -557,6 +559,7 @@ TEST(POPGATest, mutateAddVertexNoFreeTest) {
   props.grasp_estimated_reward = false;
   props.population_size = 100;
   props.mutate_add_prob = 0.5;
+  props.num_mutations = 1;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -593,6 +596,7 @@ TEST(POPGATest, mutateRemoveVertexSuccessTest) {
   props.grasp_estimated_reward = false;
   props.population_size = 100;
   props.mutate_add_prob = 0.5;
+  props.num_mutations = 1;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
@@ -631,6 +635,7 @@ TEST(POPGATest, mutateRemoveVertexEmptyTest) {
   props.grasp_greediness = 0.5;
   props.grasp_estimated_reward = false;
   props.population_size = 100;
+  props.num_mutations = 1;
 
   Vector<double_t> r{0.0, 10.0, 10.0, 10.0, 10.0, 0.0};
   Vector<double_t> probs{1.0, 0.5, 0.5, 0.5, 0.5, 1.0};
