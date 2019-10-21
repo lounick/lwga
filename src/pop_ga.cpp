@@ -1,5 +1,8 @@
 #include "pop_ga.h"
 #include <algorithm>
+#include <cmath>
+#include <functional>
+#include <future>
 #include <limits>
 #include <set>
 
@@ -346,6 +349,21 @@ Chromosome GenerateCXChromosome(const Chromosome &p1, const Chromosome &p2,
   return ret;
 }
 
+// TODO: Docstring
+void ParallelCrossover(Vector<size_t> indices, Vector<Chromosome> &pop,
+                       const Properties &properties,
+                       const Vector<double_t> &rewards,
+                       const Vector<double_t> &probs,
+                       const Matrix<double_t> &costs) {
+  std::hash<std::thread::id> hasher;
+  static thread_local rng::RandomNumberGenerator rng;
+  rng.seed(hasher(std::this_thread::get_id()));
+  for (size_t i = 0; i < indices.size(); i = i + 2) {
+    Crossover(pop[indices[i]], pop[indices[i + 1]], properties, rewards, probs,
+              costs, rng);
+  }
+}
+
 // TODO: Fill me in
 // TODO: Docstring
 void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
@@ -376,16 +394,32 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
   }
 }
 
+// TODO: Docstring
+void ParallelMutate(Vector<size_t> indices, Vector<Chromosome> &pop,
+                    const Properties &properties,
+                    const Vector<double_t> &rewards,
+                    const Vector<double_t> &probs,
+                    const Matrix<double_t> &costs) {
+  std::hash<std::thread::id> hasher;
+  static thread_local rng::RandomNumberGenerator rng;
+  rng.seed(hasher(std::this_thread::get_id()));
+  for (size_t idx : indices) {
+    Mutate(pop[idx], properties, rewards, probs, costs, rng);
+  }
+}
+
 // TODO: Fill me in
 // TODO: Docstring
 void Mutate(Chromosome &c, const Properties &properties,
             const Vector<double_t> &rewards, const Vector<double_t> &probs,
             const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng) {
-  double_t add_prob = rng.GenerateUniformDouble(0.0, 1.0);
-  if (add_prob < properties.mutate_add_prob) {
-    MutateAdd(c, properties, rewards, probs, costs, rng);
-  } else {
-    MutateRemove(c, properties, rewards, probs, costs, rng);
+  for (size_t mut = 0; mut < properties.num_mutations; ++mut) {
+    double_t add_prob = rng.GenerateUniformDouble(0.0, 1.0);
+    if (add_prob < properties.mutate_add_prob) {
+      MutateAdd(c, properties, rewards, probs, costs, rng);
+    } else {
+      MutateRemove(c, properties, rewards, probs, costs, rng);
+    }
   }
 }
 
@@ -458,6 +492,16 @@ void MutateAdd(Chromosome &c, const Properties &properties,
   }
 }
 
+// TODO: Docstring
+void EvaluatePopulation(Vector<Chromosome> &pop, const Properties &properties,
+                        const Vector<double_t> &rewards,
+                        const Vector<double_t> &probs,
+                        const Matrix<double_t> &costs) {
+  for (Chromosome &c : pop) {
+    EvaluateChromosome(c, properties, rewards, probs, costs);
+  }
+}
+
 // TODO: Fill me in
 // TODO: Docstring
 void EvaluateChromosome(Chromosome &c, const Properties &properties,
@@ -469,6 +513,153 @@ void EvaluateChromosome(Chromosome &c, const Properties &properties,
   c.expected_reward = CalculateExpectedReward(c.p, rewards, probs);
   c.fitness =
       c.expected_reward - properties.cost_per_time_unit * c.expected_cost;
+}
+
+// TODO: Docstring
+void DoParallelCrossover(Vector<Chromosome> &pop, const Properties &properties,
+                         const Vector<double_t> &rewards,
+                         const Vector<double_t> &probs,
+                         const Matrix<double_t> &costs,
+                         rng::RandomNumberGenerator &rng) {
+  size_t num_individuals =
+      std::ceil(properties.population_size * properties.cx_rate);
+  if (num_individuals % 2) {
+    ++num_individuals;
+  }
+
+  Vector<size_t> indices =
+      rng.SampleRandomIndices(0, pop.size() - 1, num_individuals);
+
+  size_t chunk_size = indices.size() / properties.num_threads;
+  if (chunk_size % 2) {
+    --chunk_size;
+  }
+  Vector<std::future<void> > future_v;
+  for (size_t thread_count = 0; thread_count < properties.num_threads;
+       ++thread_count) {
+    Vector<size_t> tmpv(indices.begin() + thread_count * chunk_size,
+                        indices.begin() + (thread_count + 1) * chunk_size);
+    future_v.push_back(std::async(std::launch::async, ParallelCrossover, tmpv,
+                                  std::ref(pop), std::cref(properties),
+                                  std::cref(rewards), std::cref(probs),
+                                  std::cref(costs)));
+  }
+  if (indices.size() > chunk_size * properties.num_threads) {
+    Vector<size_t> tmpv(indices.begin() + properties.num_threads * chunk_size,
+                        indices.end());
+    future_v.push_back(std::async(std::launch::async, ParallelCrossover, tmpv,
+                                  std::ref(pop), std::cref(properties),
+                                  std::cref(rewards), std::cref(probs),
+                                  std::cref(costs)));
+  }
+
+  for (auto &f : future_v) {
+    f.get();
+  }
+}
+
+// TODO: Docstring
+void DoParallelMutate(Vector<Chromosome> &pop, const Properties &properties,
+                      const Vector<double_t> &rewards,
+                      const Vector<double_t> &probs,
+                      const Matrix<double_t> &costs,
+                      rng::RandomNumberGenerator &rng) {
+  size_t num_individuals =
+      std::floor(properties.population_size * properties.mutation_rate);
+
+  Vector<size_t> indices =
+      rng.SampleRandomIndices(0, pop.size() - 1, num_individuals);
+
+  size_t chunk_size = indices.size() / properties.num_threads;
+
+  Vector<std::future<void> > future_v;
+  for (size_t thread_count = 0; thread_count < properties.num_threads;
+       ++thread_count) {
+    Vector<size_t> tmpv(indices.begin() + thread_count * chunk_size,
+                        indices.begin() + (thread_count + 1) * chunk_size);
+    future_v.push_back(std::async(std::launch::async, ParallelMutate, tmpv,
+                                  std::ref(pop), std::cref(properties),
+                                  std::cref(rewards), std::cref(probs),
+                                  std::cref(costs)));
+  }
+  if (indices.size() % properties.num_threads != 0) {
+    Vector<size_t> tmpv(indices.begin() + properties.num_threads * chunk_size,
+                        indices.end());
+    future_v.push_back(std::async(std::launch::async, ParallelMutate, tmpv,
+                                  std::ref(pop), std::cref(properties),
+                                  std::cref(rewards), std::cref(probs),
+                                  std::cref(costs)));
+  }
+
+  for (auto &f : future_v) {
+    f.get();
+  }
+}
+
+// TODO: Fill me in
+// TODO: Docstring
+Vector<Chromosome> RunPOPGA(const Properties &properties,
+                            const Vector<double_t> &rewards,
+                            const Vector<double_t> &probs,
+                            const Matrix<double_t> &costs,
+                            rng::RandomNumberGenerator &rng) {
+  Chromosome best;
+  best.fitness = -std::numeric_limits<double_t>::infinity();
+
+  Vector<Chromosome> pop =
+      InitialisePopulation(properties, rewards, probs, costs, rng);
+  EvaluatePopulation(pop, properties, rewards, probs, costs);
+  size_t gen = 0;
+  size_t stable_generations = 0;
+  while (gen < properties.max_generations &&
+         stable_generations < properties.max_stable_generations) {
+    Vector<Chromosome> new_pop = SelectNewPopulation(pop, properties, rng);
+
+    if (logically_equal(best.fitness, new_pop.front().fitness)) {
+      ++stable_generations;
+    } else {
+      best = new_pop.front();
+      stable_generations = 0;
+    }
+
+    if (properties.cx_rate > 0.0) {
+      DoParallelCrossover(new_pop, properties, rewards, probs, costs, rng);
+    }
+
+    if (properties.mutation_rate > 0.0) {
+      DoParallelMutate(new_pop, properties, rewards, probs, costs, rng);
+    }
+    EvaluatePopulation(new_pop, properties, rewards, probs, costs);
+    pop = new_pop;
+    ++gen;
+  }
+  return pop;
+}
+
+// TODO: Docstring
+Vector<Chromosome> SelectNewPopulation(Vector<Chromosome> &old_pop,
+                                       const Properties &properties,
+                                       rng::RandomNumberGenerator &rng) {
+  Vector<Chromosome> new_pop;
+  new_pop.reserve(properties.population_size);
+  size_t num_elites =
+      std::ceil(properties.elite_rate * properties.population_size);
+  if (num_elites > 0) {
+    auto sort_rule = [](const Chromosome &c1, const Chromosome &c2) -> bool {
+      return c1.fitness > c2.fitness;
+    };
+    std::sort(old_pop.begin(), old_pop.end(), sort_rule);
+    Vector<Chromosome>::iterator it = old_pop.begin();
+    for (; it < old_pop.begin() + num_elites; ++it) {
+      new_pop.push_back(*it);
+    }
+  }
+
+  for (size_t i = 0; i < properties.population_size - num_elites; ++i) {
+    new_pop.push_back(
+        TournamentSelect(old_pop, properties.tournament_size, rng));
+  }
+  return new_pop;
 }
 }  // namespace pop_ga
 

@@ -37,8 +37,16 @@ struct Properties {
   double_t cost_per_time_unit;
   double_t grasp_greediness;
   bool grasp_estimated_reward;
+  size_t max_generations;
+  size_t max_stable_generations;
   size_t population_size;
   double_t mutate_add_prob;
+  size_t num_mutations;
+  double_t elite_rate;
+  size_t tournament_size;
+  double_t cx_rate;
+  double_t mutation_rate;
+  size_t num_threads;
 };
 
 struct InsertMove {
@@ -161,7 +169,16 @@ Chromosome TournamentSelect(const Vector<Chromosome> &pop,
 
 // TODO: Fill me in
 // TODO: Docstring
-void SelectNewPopulation();
+Vector<Chromosome> SelectNewPopulation(Vector<Chromosome> &old_pop,
+                                       const Properties &properties,
+                                       rng::RandomNumberGenerator &rng);
+
+// TODO: Docstring
+void DoParallelCrossover(Vector<Chromosome> &pop, const Properties &properties,
+                         const Vector<double_t> &rewards,
+                         const Vector<double_t> &probs,
+                         const Matrix<double_t> &costs,
+                         rng::RandomNumberGenerator &rng);
 
 // TODO: Fill me in
 // TODO: Docstring
@@ -171,9 +188,32 @@ void Crossover(Chromosome &p1, Chromosome &p2, const Properties &properties,
 
 // TODO: Fill me in
 // TODO: Docstring
+void ParallelCrossover(Vector<size_t> indices, Vector<Chromosome> &pop,
+                       const Properties &properties,
+                       const Vector<double_t> &rewards,
+                       const Vector<double_t> &probs,
+                       const Matrix<double_t> &costs);
+
+// TODO: Fill me in
+// TODO: Docstring
 void Mutate(Chromosome &c, const Properties &properties,
             const Vector<double_t> &rewards, const Vector<double_t> &probs,
             const Matrix<double_t> &costs, rng::RandomNumberGenerator &rng);
+
+// TODO: Docstring
+void DoParallelMutate(Vector<Chromosome> &pop, const Properties &properties,
+                      const Vector<double_t> &rewards,
+                      const Vector<double_t> &probs,
+                      const Matrix<double_t> &costs,
+                      rng::RandomNumberGenerator &rng);
+
+// TODO: Fill me in
+// TODO: Docstring
+void ParallelMutate(Vector<size_t> indices, Vector<Chromosome> &pop,
+                    const Properties &properties,
+                    const Vector<double_t> &rewards,
+                    const Vector<double_t> &probs,
+                    const Matrix<double_t> &costs);
 
 // TODO: Fill me in
 // TODO: Docstring
@@ -190,11 +230,25 @@ void MutateAdd(Chromosome &c, const Properties &properties,
 
 // TODO: Fill me in
 // TODO: Docstring
+void EvaluatePopulation(Vector<Chromosome> &pop, const Properties &properties,
+                        const Vector<double_t> &rewards,
+                        const Vector<double_t> &probs,
+                        const Matrix<double_t> &costs);
+
+// TODO: Fill me in
+// TODO: Docstring
 void EvaluateChromosome(Chromosome &c, const Properties &properties,
                         const Vector<double_t> &rewards,
                         const Vector<double_t> &probs,
                         const Matrix<double_t> &costs);
 
+// TODO: Fill me in
+// TODO: Docstring
+Vector<Chromosome> RunPOPGA(const Properties &properties,
+                            const Vector<double_t> &rewards,
+                            const Vector<double_t> &probs,
+                            const Matrix<double_t> &costs,
+                            rng::RandomNumberGenerator &rng);
 // TODO: Fill me in
 // TODO: Docstring
 Vector<double_t> GenerateActualServiceRequests();
