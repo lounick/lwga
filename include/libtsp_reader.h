@@ -24,12 +24,14 @@ enum class ProblemType {
 };
 
 enum class EdgeWeightType {
+  EXPLICIT,
   EUC_2D,
   EUC_3D,
   MAX_2D,
   MAX_3D,
+  MAN_2D,
+  MAN_3D,
   CEIL_2D,
-  EXPLICIT,
   GEO,
   ATT,
   XRAY1,
@@ -50,10 +52,15 @@ enum class EdgeWeightFormat {
   LOWER_DIAG_COL,
 };
 
+enum class EdgeDataFormat {
+  EDGE_LIST,
+  ADJ_LIST,
+}
+
 enum class NodeCoordType {
-  TWO_D,
-  THREE_D,
-  NONE,
+  TWOD_COORDS,
+  THREED_COORDS,
+  NO_COORDS,
 };
 
 enum class DisplayDataType {
@@ -65,6 +72,17 @@ enum class DisplayDataType {
 enum class FileSection {
   HEADER,
   DATA,
+}
+
+enum class DataSection {
+  NODE_COORD_SECTION,
+  DEPOT_SECTION,
+  DEMAND_SECTION,
+  EDGE_DATA_SECTION,
+  FIXED_EDGES_SECTION,
+  DISPLAY_DATA_SECTION,
+  TOUR_SECTION,
+  EDGE_WEIGHT_SECTION,
 }
 
 class LIBTSPReader {
@@ -79,22 +97,31 @@ class LIBTSPReader {
   void ParseFile();
 
  private:
-  void HandleHeaderEntry(const std::string &line);
-  void HandleDataEntry(const std::string &line);
+  bool HandleHeaderEntry(const std::string &line);
+  bool HandleDataEntry(const std::string &line);
+  bool HandleProblemType(const std::string &value);
+  bool HandleEdgeWeightType(const std::string &value);
+  bool HandleEdgeWeightFormat(const std::string &value);
+  bool HandleEdgeDataFormat(const std::string &value);
+  bool HandleNodeCoordType(const std::string &value);
+  bool HandleDispleyDataType(const std::string &value);
 
   std::string file_name_;
   std::string problem_name_;
   ProblemType problem_type_;
   FileSection file_section_;
-  EdgeWeightType weight_type_;
-  EdgeWeightFormat weigth_format_;
-  NodeCoordType coord_type_;
+  EdgeWeightType edge_weight_type_;
+  EdgeWeightFormat edge_weight_format_;
+  EdgeDataFormat edge_data_format_;
+  NodeCoordType node_coord_type_;
   DisplayDataType display_data_type_;
   std::ifstream file_stream_;
   Matrix<double_t> cost_mat_;
   Vector<double_t> probabilities_;
   Vector<double_t> rewards_;
-  double_t capacity_;
+  int capacity_;
+  int dimension_;
+  bool eof_;
 
   const std::string kNameIdentifier = "NAME";
   const std::string kTypeIdentifier = "TYPE";
@@ -116,12 +143,14 @@ class LIBTSPReader {
   const std::string kTOURIdentifier = "TOUR";
   const std::string kPOPIdentifier = "POP";
 
+  const std::string kExplicitIdentifier = "EXPLICIT";
   const std::string kEuc2DIdentifier = "EUC_2D";
   const std::string kEuc3DIdentifier = "EUC_3D";
   const std::string kMax2DIdentifier = "MAX_2D";
   const std::string kMax3DIdentifier = "MAX_3D";
+  const std::string kMan2DIdentifier = "MAN_2D";
+  const std::string kMan3DIdentifier = "MAN_3D";
   const std::string kCeil2DIdentifier = "CEIL_2D";
-  const std::string kExplicitIdentifier = "EXPLICIT";
   const std::string kGeopIdentifier = "GEO";
   const std::string kAttIdentifier = "ATT";
   const std::string kXRay1Identifier = "XRAY1";
@@ -139,12 +168,27 @@ class LIBTSPReader {
   const std::string kUpperDiagColIdentifier = "UPPER_DIAG_COL";
   const std::string kLowerDiagColIdentifier = "LOWER_DIAG_COL";
 
-  const std::string kTwoDIdentifier = "TWO_D";
-  const std::string kThreeDIdentifier = "THREE_D";
+  const std::string kEdgeListIdentifier = "EDGE_LIST";
+  const std::string kAdjListIdentifier = "ADJ_LIST";
+
+  const std::string kTwoDIdentifier = "TWOD_COORDS";
+  const std::string kThreeDIdentifier = "THREED_COORDS";
+  const std::string kNoCoordsIdentifier = "NO_COORDS";
 
   const std::string kCoordDisplayIdentifier = "COORD_DISPLAY";
   const std::string kTwoDDisplayIdentifier = "TWOD_DISPLAY";
   const std::string kNoDisplayIdentifier = "NO_DISPLAY";
+
+  const std::string kDelimeter = ":";
+
+  const std::string kIdentifier = "NODE_COORD_SECTION";
+  const std::string kIdentifier = "DEPOT_SECTION";
+  const std::string kIdentifier = "DEMAND_SECTION";
+  const std::string kIdentifier = "EDGE_DATA_SECTION";
+  const std::string kIdentifier = "FIXED_EDGES_SECTION";
+  const std::string kIdentifier = "DISPLAY_DATA_SECTION";
+  const std::string kIdentifier = "TOUR_SECTION";
+  const std::string kIdentifier = "EDGE_WEIGHT_SECTION";
 };
 }  // namespace libtsp_reader
 #endif  // LWGA_LIBTSP_READER_H_
