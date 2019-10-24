@@ -30,7 +30,9 @@ Matrix<double_t> LIBTSPReader::GetCostMatrix() { return cost_mat_; }
 Vector<double_t> LIBTSPReader::GetProbabilityVector() { return probabilties_; }
 
 Vector<double_t> LIBTSPReader::GetRewardsVector() { return rewards_; }
+
 double_t LIBTSPReader::GetCapacity() { return capacity_; }
+
 void LIBTSPReader::ParseFile() {
   std::string line;
   while (std::getline(file_stream_, line) && !eof_) {
@@ -40,7 +42,9 @@ void LIBTSPReader::ParseFile() {
       HandleDataEntry(line);
     }
   }
+  GenerateCostMatrix();
 }
+
 bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
   std::string::size_type pos;
   pos = line.find(kDelimeter);
@@ -48,7 +52,7 @@ bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
   // If you don't find the delimeter try to handle it as data
   if (pos == std::string::npos) {
     file_section_ = FileSection::DATA;
-    HandleDataEntry(line);
+    return HandleDataEntry(line);
   } else {
     std::string key = line.substr(0, pos);
     std::string value = line.substr(pos + 1, std::string::npos);
@@ -82,9 +86,33 @@ bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
       return false;
     }
   }
+  return true;
 }
 
-bool LIBTSPReader::HandleDataEntry(const std::string &line) {}
+bool LIBTSPReader::HandleDataEntry(const std::string &line) {
+  if (line.compare(kNodeCoordSectionIdentifier) == 0) {
+    data_section_ = DataSection::NODE_COORD_SECTION;
+  } else if (line.compare(kDepotSectionIdentifier) == 0) {
+    data_section_ = DataSection::DEPOT_SECTION;
+  } else if (line.compare(kDemandSectionIdentifier) == 0) {
+    data_section_ = DataSection::DEMAND_SECTION;
+  } else if (line.compare(kEdgeDataSectionIdentifier) == 0) {
+    data_section_ = DataSection::EDGE_DATA_SECTION;
+  } else if (line.compare(kFixedEdgesSectionIdentifier) == 0) {
+    data_section_ = DataSection::FIXED_EDGES_SECTION;
+  } else if (line.compare(kDisplayDataSectionIdentifier) == 0) {
+    data_section_ = DataSection::DISPLAY_DATA_SECTION;
+  } else if (line.compare(kTourSectionIdentifier) == 0) {
+    data_section_ = DataSection::TOUR_SECTION;
+  } else if (line.compare(kEdgeWeightSectionIdentifier) == 0) {
+    data_section_ = DataSection::EDGE_WEIGHT_SECTION;
+  } else if (key.compare(kEOFIdentifier) == 0) {
+    eof_ = true;
+  } else {
+    return HandleSectionEntry(line);
+  }
+  return true;
+}
 
 bool LIBTSPReader::HandleProblemType(const std::string &value) {
   if (value.compare(kTSPIdentifier) == 0) {
@@ -215,4 +243,182 @@ bool LIBTSPReader::HandleDispleyDataType(const std::string &value) {
   }
   return true;
 }
+
+bool LIBTSPReader::HandleSectionEntry(const std::string &line) {
+  if (data_section_ == DataSection::NODE_COORD_SECTION) {
+    return HandleNodeCoord(line);
+  } else if (data_section_ == DataSection::DEPOT_SECTION) {
+    return HandleDepot(line);
+  } else if (data_section_ == DataSection::DEMAND_SECTION) {
+    return HandleDemand(line);
+  } else if (data_section_ == DataSection::EDGE_DATA_SECTION) {
+    return HandleEdgeData(line);
+  } else if (data_section_ == DataSection::FIXED_EDGES_SECTION) {
+    return HandleFixedEdges(line);
+  } else if (data_section_ == DataSection::DISPLAY_DATA_SECTION) {
+    return HandleDisplayData(line);
+  } else if (data_section_ == DataSection::TOUR_SECTION) {
+    return HandleTour(line);
+  } else if (data_section_ == DataSection::EDGE_WEIGHT_SECTION) {
+    return HandleEdgeWeight(line);
+  } else {
+    std::cout << "Can't process unknown data section entry" << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleNodeCoord(const std::string &line) {
+  std::stringstream iss(line);
+  if (node_coord_type_ == NodeCoordType::TWOD_COORDS) {
+    nodes_2d_.resize(dimension_);
+    size_t id;
+    Node2D node;
+    iss >> id >> node.x >> node.y;
+    nodes_2d_[id - 1] = node;
+  } else if (node_coord_type_ == NodeCoordType::THREED_COORDS) {
+    nodes_3d_.resize(dimension_);
+    size_t id;
+    Node3D node;
+    iss >> id >> node.x >> node.y >> node.d;
+    nodes_3d_[id - 1] = node;
+  } else if (node_coord_type_ == NodeCoordType::NO_COORDS) {
+    std::cout << "Node coordinate type set to NO_COORDS" << std::endl;
+    return true;
+  } else {
+    std::cout << "No coordinate types set. Don't know what to do." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleDepot(const std::string &line) {
+  std::stringstream iss(line);
+  size_t depot;
+  iss >> depot;
+  if (depot > 0) {
+    depots_.push_back(depot - 1);
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleDemand(const std::string &line) {
+  std::stringstream iss(line);
+  demands_.resize(dimension_);
+  size_t id, demand;
+  iss >> id >> demand;
+  demands_[id - 1] = demand;
+  return true;
+}
+
+bool LIBTSPReader::HandleEdgeData(const std::string &line) {
+  std::stringstream iss(line);
+  if (edge_data_format_ == EdgeDataFormat::EDGE_LIST) {
+    Edge e;
+    iss >> e.start >> e.end;
+    if (e.start > 0) {
+      --e.start;
+      --e.end;
+      edge_list_.push_back(e);
+    }
+  } else if (edge_data_format_ == EdgeDataFormat::ADJ_LIST) {
+    adj_list_.resize(dimension_);
+    int id;
+    iss >> id;
+    --id;
+    int adj_id;
+    iss >> adj_id;
+    while (adj_id > 0) {
+      --adj_id;
+      adj_list_[id].push_back(adj_id);
+      iss >> adj_id;
+    }
+  } else {
+    std::cout << "Edge data format not defined." << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleFixedEdges(const std::string &line) {
+  std::stringstream iss(line);
+  Edge e;
+  iss >> e.start >> e.end;
+  if (e.start > 0) {
+    --e.start;
+    --e.end;
+    fixed_edges_.push_back(e);
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleDisplayData(const std::string &line) {
+  std::stringstream iss(line);
+  if (display_data_type_ == DisplayDataType::TWOD_DISPLAY) {
+    display_nodes_.resize(dimension_);
+    size_t id;
+    Node2D node;
+    iss >> id >> node.x >> node.y;
+    display_nodes_[id - 1] = node;
+  } else {
+    std::cout << "Only TWOD_DISPLAY is supported" << std::endl;
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleTour(const std::string &line) {
+  std::stringstream iss(line);
+  Vector<int> tour;
+  int node;
+  iss >> node;
+  if (node > 0) {
+    while (node > 0) {
+      tour.push_back(--node);
+      iss >> node;
+    }
+    tours.push_back(tour);
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleEdgeWeight(const std::string &line) {
+  std::stringstream iss(line);
+  double_t cost;
+  while (iss >> cost) {
+    edge_weights_.push_back(cost);
+  }
+}
+
+void LIBTSPReader::GenerateCostMatrix() {
+  // After reading all the file we need to generate the cost matrix.
+  // See if you have nodes or edge weights
+  // If Edge weights fill the matrix based on the format
+  // if nodes use the correct algorithm to fill the matrix
+  if (edge_weight_type_ == EdgeWeightType::EXPLICIT) {
+    GenerateCostMatrixFromEdges();
+  } else {
+    GenerateCostMatrixFromNodes();
+  }
+}
+
+void LIBTSPReader::GenerateCostMatrixFromEdges() {
+  if (edge_weight_format_ == EdgeWeightFormat::FULL_MATRIX) {
+  } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_ROW) {
+  } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_ROW) {
+  } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_DIAG_ROW) {
+  } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_DIAG_ROW) {
+  } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_COL) {
+    std::cout << "UPPER_COL weight format not yet supported" << std::endl;
+  } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_COL) {
+    std::cout << "LOWER_COL weight format not yet supported" << std::endl;
+  } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_DIAG_COL) {
+    std::cout << "UPPER_DIAG_COL weight format not yet supported" << std::endl;
+  } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_DIAG_COL) {
+    std::cout << "LOWER_DIAG_COL weight format not yet supported" << std::endl;
+  } else {
+    std::cout << "This edge weight format is not supported." << std::endl;
+  }
+}
+
+void LIBTSPReader::GenerateCostMatrixFromNodes() {}
 }  // namespace libtsp_reader

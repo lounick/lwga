@@ -13,6 +13,22 @@ using Matrix = std::vector<std::vector<T>>;
 template <typename T>
 using Vector = std::vector<T>;
 
+struct Node2D {
+  double_t x;
+  double_t y;
+};
+
+struct Node3D {
+  double_t x;
+  double_t y;
+  double_t z;
+};
+
+struct Edge {
+  int start;
+  int end;
+};
+
 enum class ProblemType {
   TSP,
   ATSP,
@@ -55,7 +71,7 @@ enum class EdgeWeightFormat {
 enum class EdgeDataFormat {
   EDGE_LIST,
   ADJ_LIST,
-}
+};
 
 enum class NodeCoordType {
   TWOD_COORDS,
@@ -72,7 +88,7 @@ enum class DisplayDataType {
 enum class FileSection {
   HEADER,
   DATA,
-}
+};
 
 enum class DataSection {
   NODE_COORD_SECTION,
@@ -83,7 +99,7 @@ enum class DataSection {
   DISPLAY_DATA_SECTION,
   TOUR_SECTION,
   EDGE_WEIGHT_SECTION,
-}
+};
 
 class LIBTSPReader {
  public:
@@ -105,11 +121,24 @@ class LIBTSPReader {
   bool HandleEdgeDataFormat(const std::string &value);
   bool HandleNodeCoordType(const std::string &value);
   bool HandleDispleyDataType(const std::string &value);
+  bool HandleSectionEntry(const std::string &line);
+  bool HandleNodeCoord(const std::string &line);
+  bool HandleDepot(const std::string &line);
+  bool HandleDemand(const std::string &line);
+  bool HandleEdgeData(const std::string &line);
+  bool HandleFixedEdges(const std::string &line);
+  bool HandleDisplayData(const std::string &line);
+  bool HandleTour(const std::string &line);
+  bool HandleEdgeWeight(const std::string &line);
+  void GenerateCostMatrix();
+  void GenerateCostMatrixFromEdges();
+  void GenerateCostMatrixFromNodes();
 
   std::string file_name_;
   std::string problem_name_;
   ProblemType problem_type_;
   FileSection file_section_;
+  DataSection data_section_;
   EdgeWeightType edge_weight_type_;
   EdgeWeightFormat edge_weight_format_;
   EdgeDataFormat edge_data_format_;
@@ -122,6 +151,17 @@ class LIBTSPReader {
   int capacity_;
   int dimension_;
   bool eof_;
+
+  Vector<Node2D> nodes_2d_;
+  Vector<Node3D> nodes_3d_;
+  Vector<int> depots_;
+  Vector<size_t> demands_;
+  Vector<Edge> edge_list_;
+  Matrix<int> adj_list_;
+  Vector<Edge> fixed_edges_;
+  Vector<Node2D> display_nodes_;
+  Matrix<int> tours_;
+  Vector<double_t> edge_weights_;
 
   const std::string kNameIdentifier = "NAME";
   const std::string kTypeIdentifier = "TYPE";
@@ -181,14 +221,14 @@ class LIBTSPReader {
 
   const std::string kDelimeter = ":";
 
-  const std::string kIdentifier = "NODE_COORD_SECTION";
-  const std::string kIdentifier = "DEPOT_SECTION";
-  const std::string kIdentifier = "DEMAND_SECTION";
-  const std::string kIdentifier = "EDGE_DATA_SECTION";
-  const std::string kIdentifier = "FIXED_EDGES_SECTION";
-  const std::string kIdentifier = "DISPLAY_DATA_SECTION";
-  const std::string kIdentifier = "TOUR_SECTION";
-  const std::string kIdentifier = "EDGE_WEIGHT_SECTION";
+  const std::string kNodeCoordSectionIdentifier = "NODE_COORD_SECTION";
+  const std::string kDepotSectionIdentifier = "DEPOT_SECTION";
+  const std::string kDemandSectionIdentifier = "DEMAND_SECTION";
+  const std::string kEdgeDataSectionIdentifier = "EDGE_DATA_SECTION";
+  const std::string kFixedEdgesSectionIdentifier = "FIXED_EDGES_SECTION";
+  const std::string kDisplayDataSectionIdentifier = "DISPLAY_DATA_SECTION";
+  const std::string kTourSectionIdentifier = "TOUR_SECTION";
+  const std::string kEdgeWeightSectionIdentifier = "EDGE_WEIGHT_SECTION";
 };
 }  // namespace libtsp_reader
 #endif  // LWGA_LIBTSP_READER_H_
