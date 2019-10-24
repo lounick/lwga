@@ -10,6 +10,13 @@ void RemoveSpaces(std::string &str) {
             str.end());
 }
 
+void ResizeDoubleMat(Matrix<double_t> &mat, size_t size) {
+  mat.resize(size);
+  for (Vector<double_t> &v : mat) {
+    v.resize(size);
+  }
+}
+
 LIBTSPReader::LIBTSPReader(std::string file_name) {
   file_name_ = file_name;
   eof_ = false;
@@ -403,10 +410,51 @@ void LIBTSPReader::GenerateCostMatrix() {
 
 void LIBTSPReader::GenerateCostMatrixFromEdges() {
   if (edge_weight_format_ == EdgeWeightFormat::FULL_MATRIX) {
+    ResizeDoubleMat(cost_mat_, dimension_);
+    size_t idx = 0;
+    for (size_t row = 0; row < dimension_; ++row) {
+      for (size_t col = 0; col < dimension_; ++col) {
+        cost_mat_[row][col] = edge_weights_[idx++];
+      }
+    }
   } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_ROW) {
+    ResizeDoubleMat(cost_mat_, dimension_);
+    size_t idx = 0;
+    for (size_t row = 0; row < dimension_; ++row) {
+      cost_mat_[row][row] = 0.0;
+      for (size_t col = row + 1; col < dimension_; ++col) {
+        cost_mat_[row][col] = edge_weights_[idx++];
+        cost_mat_[col][row] = cost_mat_[row][col];
+      }
+    }
   } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_ROW) {
+    ResizeDoubleMat(cost_mat_, dimension_);
+    size_t idx = 0;
+    for (size_t row = 0; row < dimension_; ++row) {
+      cost_mat_[row][row] = 0.0;
+      for (int col = 0; col < row; ++col) {
+        cost_mat_[row][col] = edge_weights_[idx++];
+        cost_mat_[col][row] = cost_mat_[row][col];
+      }
+    }
   } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_DIAG_ROW) {
+    ResizeDoubleMat(cost_mat_, dimension_);
+    size_t idx = 0;
+    for (size_t row = 0; row < dimension_; ++row) {
+      for (size_t col = row; col < dimension_; ++col) {
+        cost_mat_[row][col] = edge_weights_[idx++];
+        cost_mat_[col][row] = cost_mat_[row][col];
+      }
+    }
   } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_DIAG_ROW) {
+    ResizeDoubleMat(cost_mat_, dimension_);
+    size_t idx = 0;
+    for (size_t row = 0; row < dimension_; ++row) {
+      for (size_t col = 0; col < row + 1; ++col) {
+        cost_mat_[row][col] = edge_weights_[idx++];
+        cost_mat_[col][row] = cost_mat_[row][col];
+      }
+    }
   } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_COL) {
     std::cout << "UPPER_COL weight format not yet supported" << std::endl;
   } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_COL) {
