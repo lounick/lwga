@@ -1,5 +1,7 @@
 #include "libtsp_reader.h"
 
+#include <algorithm>
+#include <cmath>
 #include <sstream>
 
 namespace libtsp_reader {
@@ -15,6 +17,98 @@ void ResizeDoubleMat(Matrix<double_t> &mat, size_t size) {
   for (Vector<double_t> &v : mat) {
     v.resize(size);
   }
+}
+
+size_t CalculateEuclideanDistance(const Node2D &a, const Node2D &b) {
+  double_t xd = a.x - b.x;
+  double_t yd = a.y - b.y;
+  double_t dist = std::sqrt(std::pow(xd, 2) + std::pow(yd, 2)) + 0.5;
+  return std::round(dist);
+}
+
+size_t CalculateEuclideanDistance(const Node3D &a, const Node3D &b) {
+  double_t xd = a.x - b.x;
+  double_t yd = a.y - b.y;
+  double_t zd = a.z - b.z;
+  double_t dist =
+      std::sqrt(std::pow(xd, 2) + std::pow(yd, 2) + std::pow(zd, 2)) + 0.5;
+  return std::round(dist);
+}
+
+size_t CalculateManhattanDistance(const Node2D &a, const Node2D &b) {
+  double_t xd = std::abs(a.x - b.x);
+  double_t yd = std::abs(a.y - b.y);
+  double_t dist = xd + yd + 0.5;
+  return std::round(dist);
+}
+
+size_t CalculateManhattanDistance(const Node3D &a, const Node3D &b) {
+  double_t xd = std::abs(a.x - b.x);
+  double_t yd = std::abs(a.y - b.y);
+  double_t zd = std::abs(a.z - b.z);
+  double_t dist = xd + yd + zd + 0.5;
+  return std::round(dist);
+}
+
+size_t CalculateMaximumDistance(const Node2D &a, const Node2D &b) {
+  double_t xd = std::abs(a.x - b.x);
+  double_t yd = std::abs(a.y - b.y);
+  return std::max(std::round(xd + 0.5), std::round(yd + 0.5));
+}
+
+size_t CalculateMaximumDistance(const Node3D &a, const Node3D &b) {
+  double_t xd = std::abs(a.x - b.x);
+  double_t yd = std::abs(a.y - b.y);
+  double_t zd = std::abs(a.z - b.z);
+  return std::max(std::max(std::round(xd + 0.5), std::round(yd + 0.5)),
+                  std::round(zd + 0.5));
+}
+
+size_t CalculateGeographicalDistance(const Node2D &a, const Node2D &b) {
+  double_t PI = 3.141592;
+
+  size_t deg = std::round(a.x);
+  double_t min = a.x - deg;
+  double_t lat_a = PI * (deg + ((5.0 * min) / 3.0)) / 180.0;
+
+  deg = std::round(a.y);
+  min = a.y - deg;
+  double_t lon_a = PI * (deg + ((5.0 * min) / 3.0)) / 180.0;
+
+  deg = std::round(b.x);
+  min = b.x - deg;
+  double_t lat_b = PI * (deg + ((5.0 * min) / 3.0)) / 180.0;
+
+  deg = std::round(b.y);
+  min = b.y - deg;
+  double_t lon_b = PI * (deg + ((5.0 * min) / 3.0)) / 180.0;
+
+  double_t RRR = 6378.388;
+
+  double_t q1 = std::cos(lon_a - lon_b);
+  double_t q2 = std::cos(lat_a - lat_b);
+  double_t q3 = std::cos(lat_a + lat_b);
+
+  return std::round(RRR * std::acos(0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)) +
+                    1.0);
+}
+
+size_t CalculatePseudoEuclideanDistance(const Node2D &a, const Node2D &b) {
+  double_t xd = a.x - b.x;
+  double_t yd = a.y - b.y;
+  double_t r = std::sqrt((std::pow(xd, 2) + std::pow(yd, 2)) / 10.0);
+  size_t t = std::round(r);
+  if (t < r) {
+    t += 1
+  }
+  return t;
+}
+
+size_t CalculateiCeil2DDistance(const Node2D &a, const Node2D &b) {
+  double_t xd = a.x - b.x;
+  double_t yd = a.y - b.y;
+  double_t dist = std::sqrt(std::pow(xd, 2) + std::pow(yd, 2)) + 0.5;
+  return std::round(std::ceil(dist));
 }
 
 LIBTSPReader::LIBTSPReader(std::string file_name) {
@@ -40,16 +134,27 @@ Vector<double_t> LIBTSPReader::GetRewardsVector() { return rewards_; }
 
 double_t LIBTSPReader::GetCapacity() { return capacity_; }
 
-void LIBTSPReader::ParseFile() {
+double_t LIBTSPReader::GetMaxCost() { return max_cost_; }
+double_t LIBTSPReader::GetMaxReward() { return max_reward_; }
+size_t LIBTSPReader::GetStartVertexID() { return start_vertex_id_; }
+size_t LIBTSPReader::GetEndVertexID() { return end_vertex_id_; }
+
+bool LIBTSPReader::ParseFile() {
   std::string line;
   while (std::getline(file_stream_, line) && !eof_) {
     if (file_section == FileSection::HEADER) {
-      HandleHeaderEntry(line);
+      if (!HandleHeaderEntry(line)) {
+        std::cout << "An error occured. Parsing stopping." << std::endl;
+        return false;
+      }
     } else {
-      HandleDataEntry(line);
+      if (!HandleDataEntry(line)) {
+        std::cout << "An error occured. Parsing stopping." << std::endl;
+        return false;
+      }
     }
   }
-  GenerateCostMatrix();
+  return GenerateCostMatrix();
 }
 
 bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
@@ -87,6 +192,14 @@ bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
       return HandleDispleyDataType(value);
     } else if (key.compare(kEOFIdentifier) == 0) {
       eof_ = true;
+    } else if (key.compare(kTMaxIdendtifier) == 0) {
+      max_cost_ = std::stod(value);
+    } else if (key.compare(kTPrizeIdendtifier) == 0) {
+      max_reward_ = std::stod(value);
+    } else if (key.compare(kOriginIdendtifier) == 0) {
+      start_vertex_id_ = std::stoi(value);
+    } else if (key.compare(kDestinationIdendtifier) == 0) {
+      end_vertex_id_ = std::stoi(value);
     } else {
       std::cout << "Processing header entry. " << key << " is not a valid key!"
                 << std::endl;
@@ -113,7 +226,9 @@ bool LIBTSPReader::HandleDataEntry(const std::string &line) {
     data_section_ = DataSection::TOUR_SECTION;
   } else if (line.compare(kEdgeWeightSectionIdentifier) == 0) {
     data_section_ = DataSection::EDGE_WEIGHT_SECTION;
-  } else if (key.compare(kEOFIdentifier) == 0) {
+  } else if (line.compare(kNodePrizeProbabilityIdentifier) == 0) {
+    data_section_ = DataSection::NODE_PRIZE_PROBABILITY;
+  } else if (line.compare(kEOFIdentifier) == 0) {
     eof_ = true;
   } else {
     return HandleSectionEntry(line);
@@ -268,6 +383,8 @@ bool LIBTSPReader::HandleSectionEntry(const std::string &line) {
     return HandleTour(line);
   } else if (data_section_ == DataSection::EDGE_WEIGHT_SECTION) {
     return HandleEdgeWeight(line);
+  } else if (data_section_ == DataSection::NODE_PRIZE_PROBABILITY) {
+    return HandleNodePrizeProbability(line);
   } else {
     std::cout << "Can't process unknown data section entry" << std::endl;
     return false;
@@ -390,26 +507,45 @@ bool LIBTSPReader::HandleTour(const std::string &line) {
 
 bool LIBTSPReader::HandleEdgeWeight(const std::string &line) {
   std::stringstream iss(line);
-  double_t cost;
+  size_t cost;
   while (iss >> cost) {
     edge_weights_.push_back(cost);
   }
 }
 
-void LIBTSPReader::GenerateCostMatrix() {
+bool LIBTSPReader::HandleNodePrizeProbability(const std::string &line) {
+  std::stringstream iss(line);
+  rewards_.resize(dimension_);
+  probabilties_.resize(dimension_);
+  size_t id;
+  double_t reward;
+  double_t probability;
+  iss >> id >> reward >> probability;
+  rewards_[id] = reward;
+  probabilties_[id] = probability;
+}
+
+bool LIBTSPReader::GenerateCostMatrix() {
   // After reading all the file we need to generate the cost matrix.
   // See if you have nodes or edge weights
   // If Edge weights fill the matrix based on the format
   // if nodes use the correct algorithm to fill the matrix
   if (edge_weight_type_ == EdgeWeightType::EXPLICIT) {
-    GenerateCostMatrixFromEdges();
+    return GenerateCostMatrixFromEdges();
   } else {
-    GenerateCostMatrixFromNodes();
+    return GenerateCostMatrixFromNodes();
   }
+  return false;
 }
 
-void LIBTSPReader::GenerateCostMatrixFromEdges() {
+// TODO: Break to smaller functions
+bool LIBTSPReader::GenerateCostMatrixFromEdges() {
   if (edge_weight_format_ == EdgeWeightFormat::FULL_MATRIX) {
+    if (edge_weights_.size() < dimension_ * dimension_) {
+      std::cout << "Edge weights are not enough for a full matrix."
+                << std::endl;
+      return false;
+    }
     ResizeDoubleMat(cost_mat_, dimension_);
     size_t idx = 0;
     for (size_t row = 0; row < dimension_; ++row) {
@@ -418,6 +554,12 @@ void LIBTSPReader::GenerateCostMatrixFromEdges() {
       }
     }
   } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_ROW) {
+    size_t num_elements = dimension_ * (dimension_ - 1) / 2;
+    if (edge_weights_.size() < num_elements) {
+      std::cout << "Edge weights are not enough for upper row matrix ."
+                << std::endl;
+      return false;
+    }
     ResizeDoubleMat(cost_mat_, dimension_);
     size_t idx = 0;
     for (size_t row = 0; row < dimension_; ++row) {
@@ -428,6 +570,12 @@ void LIBTSPReader::GenerateCostMatrixFromEdges() {
       }
     }
   } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_ROW) {
+    size_t num_elements = dimension_ * (dimension_ - 1) / 2;
+    if (edge_weights_.size() < num_elements) {
+      std::cout << "Edge weights are not enough for lower row matrix ."
+                << std::endl;
+      return false;
+    }
     ResizeDoubleMat(cost_mat_, dimension_);
     size_t idx = 0;
     for (size_t row = 0; row < dimension_; ++row) {
@@ -438,6 +586,12 @@ void LIBTSPReader::GenerateCostMatrixFromEdges() {
       }
     }
   } else if (edge_weight_format_ == EdgeWeightFormat::UPPER_DIAG_ROW) {
+    size_t num_elements = (dimension_ * (dimension_ - 1) / 2) + dimension_;
+    if (edge_weights_.size() < num_elements) {
+      std::cout << "Edge weights are not enough for upper diag row matrix ."
+                << std::endl;
+      return false;
+    }
     ResizeDoubleMat(cost_mat_, dimension_);
     size_t idx = 0;
     for (size_t row = 0; row < dimension_; ++row) {
@@ -447,6 +601,12 @@ void LIBTSPReader::GenerateCostMatrixFromEdges() {
       }
     }
   } else if (edge_weight_format_ == EdgeWeightFormat::LOWER_DIAG_ROW) {
+    size_t num_elements = (dimension_ * (dimension_ - 1) / 2) + dimension_;
+    if (edge_weights_.size() < num_elements) {
+      std::cout << "Edge weights are not enough for lower diag row matrix ."
+                << std::endl;
+      return false;
+    }
     ResizeDoubleMat(cost_mat_, dimension_);
     size_t idx = 0;
     for (size_t row = 0; row < dimension_; ++row) {
@@ -468,5 +628,226 @@ void LIBTSPReader::GenerateCostMatrixFromEdges() {
   }
 }
 
-void LIBTSPReader::GenerateCostMatrixFromNodes() {}
+bool LIBTSPReader::GenerateCostMatrixFromNodes() {
+  if (edge_weight_type_ == EdgeWeightType::EUC_2D) {
+    return HandleEuc2DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::EUC_3D) {
+    return HandleEuc3DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::MAX_2D) {
+    return HandleMax2DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::MAX_3D) {
+    return HandleMax3DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::MAN_2D) {
+    return HandleMan2DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::MAN_3D) {
+    return HandleMan3DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::CEIL_2D) {
+    return HandleCeil2DCost();
+  } else if (edge_weight_type_ == EdgeWeightType::GEO) {
+    return HandleGeoCost();
+  } else if (edge_weight_type_ == EdgeWeightType::ATT) {
+    return HandleAttCost();
+  } else if (edge_weight_type_ == EdgeWeightType::XRAY1) {
+    std::cout << "XRAY1 weight type is not yet supported." << std::endl;
+    return false;
+  } else if (edge_weight_type_ == EdgeWeightType::XRAY2) {
+    std::cout << "XRAY2 weight type is not yet supported." << std::endl;
+    return false;
+  } else {
+    std::cout << "This edge weight type is not supported for node generation."
+              << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleEuc2DCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "EUC_2D edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateEuclideanDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleEuc3DCost() {
+  if (nodes_3d_.empty()) {
+    std::cout << "EUC_3D edge weight requires 3D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_3d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateEuclideanDistance(nodes_3d_[row], nodes_3d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleMax2DCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "MAX_2D edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateMaximumDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleMax3DCost() {
+  if (nodes_3d_.empty()) {
+    std::cout << "MAX_3D edge weight requires 3D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_3d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateEuclideanDistance(nodes_3d_[row], nodes_3d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleMan2DCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "MAN_2D edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateManhattanDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleMan3DCost() {
+  if (nodes_3d_.empty()) {
+    std::cout << "MAN_3D edge weight requires 3D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_3d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateEuclideanDistance(nodes_3d_[row], nodes_3d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleCeil2DCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "CEIL_2D edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateiCeil2DDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleGeoCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "GEO edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculateGeographicalDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
+bool LIBTSPReader::HandleAttCost() {
+  if (nodes_2d_.empty()) {
+    std::cout << "ATT edge weight requires 2D nodes." << std::endl;
+    return false;
+  }
+
+  if (nodes_2d_.size() != dimension_) {
+    std::cout << "Nodes are not equal to the defined dimension." << std::endl;
+    return false;
+  }
+  ResizeDoubleMat(cost_mat_, dimension_);
+  for (size_t row = 0; row < dimension_; ++row) {
+    for (size_t col = row; col < dimension_; ++col) {
+      cost_mat_[row][col] =
+          CalculatePseudoEuclideanDistance(nodes_2d_[row], nodes_2d_[col]);
+      cost_mat_[col][row] = cost_mat_[row][col];
+    }
+  }
+  return true;
+}
+
 }  // namespace libtsp_reader
