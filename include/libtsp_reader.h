@@ -1,6 +1,7 @@
 #ifndef LWGA_LIBTSP_READER_H_
 #define LWGA_LIBTSP_READER_H_
 
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -107,7 +108,7 @@ class LIBTSPReader {
   LIBTSPReader(std::string file_name);
   ~LIBTSPReader();
   bool Initialise();
-  Matrix<double_t> GetCostMatrix();
+  Matrix<size_t> GetCostMatrix();
   Vector<double_t> GetProbabilityVector();
   Vector<double_t> GetRewardsVector();
   double_t GetMaxCost();
@@ -135,6 +136,7 @@ class LIBTSPReader {
   bool HandleDisplayData(const std::string &line);
   bool HandleTour(const std::string &line);
   bool HandleEdgeWeight(const std::string &line);
+  bool HandleNodePrizeProbability(const std::string &line);
   bool GenerateCostMatrix();
   bool GenerateCostMatrixFromEdges();
   bool GenerateCostMatrixFromNodes();

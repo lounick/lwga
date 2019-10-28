@@ -111,6 +111,9 @@ target_link_libraries(two_level_solver mdmtsp cop_ga)
 
 add_library(pop_ga src/pop_ga.cpp)
 target_link_libraries(pop_ga ga-utils rng)
+
+add_library(libtsp_reader src/libtsp_reader.cpp)
+
 #add_executable(LWGA ${SOURCE_FILES})
 add_executable(cop-ga ${COP_GA})
 target_link_libraries(cop-ga dubins-curves pthread)
