@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.3)
 project(LWGA)
 
 set(CMAKE_CXX_STANDARD 14)
-set(LWGA_CXX_FLAGS "-pthread -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic -Wconversion")
+set(LWGA_CXX_FLAGS "-pthread -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Wconversion")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LWGA_CXX_FLAGS}")
 #set(CMAKE_CXX_FLAGS "-std=c++14 ${LWGA_CXX_FLAGS}")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${LWGA_CXX_FLAGS}")
