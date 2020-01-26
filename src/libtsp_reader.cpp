@@ -203,7 +203,7 @@ bool LIBTSPReader::HandleHeaderEntry(const std::string &line) {
     } else if (key.compare(kDestinationIdendtifier) == 0) {
       end_vertex_id_ = std::stoi(value);
     } else {
-      std::cout << "Processing header entry. " << key << " is not a valid key!"
+      std::cerr << "Processing header entry. " << key << " is not a valid key!"
                 << std::endl;
       return false;
     }
@@ -651,13 +651,13 @@ bool LIBTSPReader::GenerateCostMatrixFromNodes() {
   } else if (edge_weight_type_ == EdgeWeightType::ATT) {
     return HandleAttCost();
   } else if (edge_weight_type_ == EdgeWeightType::XRAY1) {
-    std::cout << "XRAY1 weight type is not yet supported." << std::endl;
+    std::cerr << "XRAY1 weight type is not yet supported." << std::endl;
     return false;
   } else if (edge_weight_type_ == EdgeWeightType::XRAY2) {
-    std::cout << "XRAY2 weight type is not yet supported." << std::endl;
+    std::cerr << "XRAY2 weight type is not yet supported." << std::endl;
     return false;
   } else {
-    std::cout << "This edge weight type is not supported for node generation."
+    std::cerr << "This edge weight type is not supported for node generation."
               << std::endl;
     return false;
   }
