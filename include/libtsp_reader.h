@@ -54,6 +54,7 @@ enum class EdgeWeightType {
   XRAY1,
   XRAY2,
   SPECIAL,
+  UNDEFINED,
 };
 
 enum class EdgeWeightFormat {

@@ -125,6 +125,7 @@ bool LIBTSPReader::Initialise() {
     return false;
   }
   file_section_ = FileSection::HEADER;
+  edge_weight_type_ = EdgeWeightType::UNDEFINED;
   return true;
 }
 Matrix<size_t> LIBTSPReader::GetCostMatrix() { return cost_mat_; }
@@ -533,10 +534,11 @@ bool LIBTSPReader::GenerateCostMatrix() {
   // if nodes use the correct algorithm to fill the matrix
   if (edge_weight_type_ == EdgeWeightType::EXPLICIT) {
     return GenerateCostMatrixFromEdges();
-  } else {
-    return GenerateCostMatrixFromNodes();
+  } else if (edge_weight_type_ == EdgeWeightType::UNDEFINED) {
+    std::cerr << "Undefined edge weight type." << std::endl;
+    return false;
   }
-  return false;
+  return GenerateCostMatrixFromNodes();
 }
 
 // TODO: Break to smaller functions
