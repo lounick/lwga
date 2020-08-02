@@ -125,7 +125,7 @@ add_executable(icra17-cop ${ICRA17_COP})
 target_link_libraries(icra17-cop dubins-curves pthread)
 
 add_executable(pop-ga src/pop_ga_main.cpp)
-target_link_libraries(pop_ga pthread)
+target_link_libraries(pop-ga pop_ga libtsp_reader pthread)
 
 #add_executable(top_ga ${TOP_GA})
 #target_link_libraries(top_ga pthread)
