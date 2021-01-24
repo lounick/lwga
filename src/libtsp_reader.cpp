@@ -525,6 +525,7 @@ bool LIBTSPReader::HandleNodePrizeProbability(const std::string &line) {
   iss >> id >> reward >> probability;
   rewards_[id] = reward;
   probabilities_[id] = probability;
+  return true;
 }
 
 bool LIBTSPReader::GenerateCostMatrix() {

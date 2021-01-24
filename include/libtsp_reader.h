@@ -254,7 +254,8 @@ class LIBTSPReader {
   const std::string kDisplayDataSectionIdentifier = "DISPLAY_DATA_SECTION";
   const std::string kTourSectionIdentifier = "TOUR_SECTION";
   const std::string kEdgeWeightSectionIdentifier = "EDGE_WEIGHT_SECTION";
-  const std::string kNodePrizeProbabilityIdentifier = "NODE_PRIZE_PROBABILITY";
+  const std::string kNodePrizeProbabilityIdentifier =
+      "NODE_PRIZE_PROBABILITY_SECTION";
 };
 }  // namespace libtsp_reader
 #endif  // LWGA_LIBTSP_READER_H_
