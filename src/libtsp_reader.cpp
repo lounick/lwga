@@ -266,22 +266,40 @@ bool LIBTSPReader::HandleEdgeWeightType(const std::string &value) {
     edge_weight_type_ = EdgeWeightType::EXPLICIT;
   } else if (value.compare(kEuc2DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::EUC_2D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kEuc3DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::EUC_3D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::THREED_COORDS;
   } else if (value.compare(kMax2DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::MAX_2D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kMax3DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::MAX_3D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::THREED_COORDS;
   } else if (value.compare(kMan2DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::MAN_2D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kMan3DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::MAN_3D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::THREED_COORDS;
   } else if (value.compare(kCeil2DIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::CEIL_2D;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kGeopIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::GEO;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kAttIdentifier) == 0) {
     edge_weight_type_ = EdgeWeightType::ATT;
+    // Must set the node_coord_type_ to know how to handle them.
+    node_coord_type_ = NodeCoordType::TWOD_COORDS;
   } else if (value.compare(kXRay1Identifier) == 0) {
     edge_weight_type_ = EdgeWeightType::XRAY1;
   } else if (value.compare(kXRay2Identifier) == 0) {
